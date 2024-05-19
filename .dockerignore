@@ -1,0 +1,6 @@
+.vscode/
+.git/
+
+config.yaml
+Dockerfile
+.dockerignore

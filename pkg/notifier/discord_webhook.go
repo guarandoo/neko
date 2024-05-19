@@ -28,7 +28,7 @@ func (n *discordWebhookNotifier) Notify(name string, reason string) error {
 		return fmt.Errorf("unable to make Discord request: %w", err)
 	}
 
-	if res.StatusCode != 200 {
+	if res.StatusCode < 200 || res.StatusCode > 299 {
 		return errors.New("unable to make Discord request")
 	}
 

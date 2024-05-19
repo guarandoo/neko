@@ -79,7 +79,14 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 	var err error
 	switch v := nc.Config.(type) {
 	case SmtpNotifierCOnfig:
-		n, err = notifier.NewSmtpNotifier(notifier.SmtpNotifierOptions{Host: v.Host, Port: v.Port, Username: v.Username, Password: v.Password})
+		n, err = notifier.NewSmtpNotifier(notifier.SmtpNotifierOptions{
+			Host:       v.Host,
+			Port:       v.Port,
+			Username:   v.Username,
+			Password:   v.Password,
+			Sender:     v.Sender,
+			Recipients: v.Recipients,
+		})
 	case DiscordWebhookNotifierConfig:
 		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{Url: v.Url})
 	default:
@@ -168,7 +175,9 @@ func main() {
 					continue
 				}
 				for _, n := range monitor.Notifiers {
-					n.Notify(monitor.Name, string(json))
+					if err := n.Notify(monitor.Name, string(json)); err != nil {
+						log.Printf("unable to notify: %s", err)
+					}
 				}
 			}
 		}(m)

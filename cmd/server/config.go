@@ -5,10 +5,12 @@ import (
 )
 
 type SmtpNotifierCOnfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Host       string   `yaml:"host"`
+	Port       int      `yaml:"port"`
+	Username   string   `yaml:"username"`
+	Password   string   `yaml:"password"`
+	Sender     string   `yaml:"sender"`
+	Recipients []string `yaml:"recipients"`
 }
 
 type DiscordWebhookNotifierConfig struct {

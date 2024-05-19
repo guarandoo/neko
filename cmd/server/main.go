@@ -89,6 +89,8 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 		})
 	case DiscordWebhookNotifierConfig:
 		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{Url: v.Url})
+	case GotifyNotifierConfig:
+		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token})
 	default:
 		n = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", nc.Type))

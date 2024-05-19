@@ -17,6 +17,11 @@ type DiscordWebhookNotifierConfig struct {
 	Url string `yaml:"url"`
 }
 
+type GotifyNotifierConfig struct {
+	Url   string `yaml:"url"`
+	Token string `yaml:"token"`
+}
+
 type NotifierConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
@@ -44,6 +49,15 @@ func (f *NotifierConfig) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	case "discord_webhook":
 		var c struct {
 			Config DiscordWebhookNotifierConfig `yaml:"config"`
+		}
+		err := unmarshal(&c)
+		if err != nil {
+			return err
+		}
+		f.Config = c.Config
+	case "gotify":
+		var c struct {
+			Config GotifyNotifierConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {

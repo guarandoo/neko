@@ -3,6 +3,7 @@ package notifier
 import (
 	"fmt"
 	"net/smtp"
+	"strings"
 )
 
 type smtpNotifier struct {
@@ -14,8 +15,13 @@ type smtpNotifier struct {
 }
 
 func (n *smtpNotifier) Notify(name string, reason string) error {
-	msg := []byte(fmt.Sprintf("%v: %v", name, reason))
-	if err := smtp.SendMail(fmt.Sprintf("%v:%v", n.host, n.port), n.auth, n.sender, n.recipients, msg); err != nil {
+	msg := ""
+	msg += fmt.Sprintf("From: %v\n", n.sender)
+	msg += fmt.Sprintf("To: %v\n", strings.Join(n.recipients, ","))
+	msg += fmt.Sprintf("Subject: %v\n", "Monitor Status Change")
+	msg += "\n"
+	msg += fmt.Sprintf("%s: %s", name, reason)
+	if err := smtp.SendMail(fmt.Sprintf("%v:%v", n.host, n.port), n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
 		return err
 	}
 	return nil

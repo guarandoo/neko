@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,8 +15,9 @@ import (
 )
 
 type httpProbe struct {
-	url    url.URL
-	method string
+	url          url.URL
+	method       string
+	maxRedirects int
 }
 
 func (p *httpProbe) Probe() (*core.Result, error) {
@@ -33,9 +35,16 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 	for _, ip := range ips {
 		test := core.Test{Target: ip.String(), Status: core.StatusUp}
 
+		redirectCount := 0
 		client := http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
+				redirectCount++
+				log.Printf("following redirect %v", redirectCount)
+				if redirectCount > p.maxRedirects {
+					return errors.New(fmt.Sprintf("Exceeded allowed redirect count %v", p.maxRedirects))
+				}
+
+				return nil
 			},
 		}
 		client.Transport = http.DefaultTransport.(*http.Transport).Clone()
@@ -77,8 +86,9 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 }
 
 type HttpProbeOptions struct {
-	Url    string
-	Method string
+	Url          string
+	Method       string
+	MaxRedirects int
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
@@ -91,8 +101,9 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	}
 
 	instance := httpProbe{
-		url:    *u,
-		method: options.Method,
+		url:          *u,
+		method:       options.Method,
+		maxRedirects: options.MaxRedirects,
 	}
 	return &instance, nil
 }

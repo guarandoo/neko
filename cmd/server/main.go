@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -66,7 +65,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case PingProbeConfig:
 		p, err = probe.NewPingProbe(probe.PingProbeOptions{Address: v.Address})
 	case HttpProbeConfig:
-		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address})
+		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: v.MaxRedirects})
 	default:
 		p = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))
@@ -172,13 +171,21 @@ func main() {
 				}
 				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
 
-				json, err := json.Marshal(res.Tests)
-				if err != nil {
+				if len(res.Tests) == 0 {
 					continue
 				}
-				for _, n := range monitor.Notifiers {
-					if err := n.Notify(monitor.Name, string(json)); err != nil {
-						log.Printf("unable to notify: %s", err)
+
+				// calculate new state
+				previousStatus := monitor.Status
+				status := res.Tests[0].Status
+
+				monitor.Status = status
+
+				if previousStatus != status {
+					for _, n := range monitor.Notifiers {
+						if err := n.Notify(monitor.Name, fmt.Sprintf("%v", status)); err != nil {
+							log.Printf("unable to notify: %s", err)
+						}
 					}
 				}
 			}

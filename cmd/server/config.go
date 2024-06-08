@@ -81,7 +81,7 @@ type PingProbeConfig struct {
 
 type HttpProbeConfig struct {
 	Address      string `yaml:"address"`
-	MaxRedirects int    `yaml:"maxRedirects"`
+	MaxRedirects *int   `yaml:"maxRedirects"`
 }
 
 type ProbeConfig struct {

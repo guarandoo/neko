@@ -65,7 +65,16 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case PingProbeConfig:
 		p, err = probe.NewPingProbe(probe.PingProbeOptions{Address: v.Address})
 	case HttpProbeConfig:
-		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: v.MaxRedirects})
+		maxRedirects := 0
+		if v.MaxRedirects == nil {
+			maxRedirects = 20
+		} else {
+			if *v.MaxRedirects < 0 {
+				return nil, errors.New("MaxRedirects cannot be a positive number")
+			}
+			maxRedirects = *v.MaxRedirects
+		}
+		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: maxRedirects})
 	default:
 		p = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))

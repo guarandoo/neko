@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -39,8 +38,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 		client := http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				redirectCount++
-				log.Printf("following redirect %v", redirectCount)
-				if redirectCount > p.maxRedirects {
+				if p.maxRedirects >= 0 && redirectCount > p.maxRedirects {
 					return errors.New(fmt.Sprintf("Exceeded allowed redirect count %v", p.maxRedirects))
 				}
 

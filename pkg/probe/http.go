@@ -17,6 +17,7 @@ type httpProbe struct {
 	url          url.URL
 	method       string
 	maxRedirects int
+	timeout      int
 }
 
 func (p *httpProbe) Probe() (*core.Result, error) {
@@ -46,6 +47,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 			},
 		}
 		client.Transport = http.DefaultTransport.(*http.Transport).Clone()
+		client.Timeout = time.Duration(p.timeout) * time.Second
 		dialer := &net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
@@ -87,6 +89,7 @@ type HttpProbeOptions struct {
 	Url          string
 	Method       string
 	MaxRedirects int
+	Timeout      int
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
@@ -102,6 +105,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 		url:          *u,
 		method:       options.Method,
 		maxRedirects: options.MaxRedirects,
+		timeout:      options.Timeout,
 	}
 	return &instance, nil
 }

@@ -82,6 +82,7 @@ type PingProbeConfig struct {
 type HttpProbeConfig struct {
 	Address      string `yaml:"address"`
 	MaxRedirects *int   `yaml:"maxRedirects"`
+	Timeout      *int   `yaml:"timeout"`
 }
 
 type ProbeConfig struct {

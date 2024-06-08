@@ -70,11 +70,20 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			maxRedirects = 20
 		} else {
 			if *v.MaxRedirects < 0 {
-				return nil, errors.New("MaxRedirects cannot be a positive number")
+				return nil, errors.New("MaxRedirects must be a positive number")
 			}
 			maxRedirects = *v.MaxRedirects
 		}
-		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: maxRedirects})
+		timeout := 0
+		if v.Timeout == nil {
+			timeout = 60
+		} else {
+			if *v.Timeout < 0 {
+				return nil, errors.New("Timeout must be a positive number")
+			}
+			timeout = *v.Timeout
+		}
+		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: maxRedirects, Timeout: timeout})
 	default:
 		p = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))

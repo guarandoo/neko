@@ -1,6 +1,9 @@
-FROM golang:1.22.3-alpine AS builder
-ENV GOOS linux
-ENV CGO_ENABLED 0
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.22.3-alpine as builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
 RUN apk update && apk add libcap
 
@@ -9,10 +12,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o neko ./cmd/server
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o neko ./cmd/server
 RUN setcap cap_net_raw=+ep neko
 
-FROM alpine:3.19
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.19
 WORKDIR /app
 RUN apk update && apk add libcap
 

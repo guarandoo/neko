@@ -196,6 +196,7 @@ func main() {
 				res, err := monitor.Probe.Probe()
 				if err != nil {
 					log.Printf("monitor %v failed: %s", monitor.Name, err)
+					continue
 				}
 				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
 

@@ -3,6 +3,7 @@ package probe
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -10,8 +11,9 @@ import (
 )
 
 type sshProbe struct {
-	host string
-	port int
+	host            string
+	port            int
+	hostKeyCallback ssh.HostKeyCallback
 }
 
 func (p *sshProbe) Probe() (*core.Result, error) {
@@ -20,27 +22,28 @@ func (p *sshProbe) Probe() (*core.Result, error) {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
 	}
 
+	config := &ssh.ClientConfig{
+		User:            "",
+		Auth:            []ssh.AuthMethod{},
+		HostKeyCallback: p.hostKeyCallback,
+	}
+
 	tests := []core.Test{}
 	for _, ip := range ips {
 		test := core.Test{Target: ip.String(), Status: core.StatusUp}
 
-		var hostKey ssh.PublicKey
-
-		config := &ssh.ClientConfig{
-			User: "username",
-			Auth: []ssh.AuthMethod{
-				ssh.Password("pass"),
-			},
-			HostKeyCallback: ssh.FixedHostKey(hostKey),
-		}
-		client, err := ssh.Dial("tcp", fmt.Sprintf("%v:%v", p.host, p.port), config)
+		client, err := ssh.Dial("tcp", fmt.Sprintf("[%v]:%v", ip, p.port), config)
 		if err != nil {
-			test.Status = core.StatusDown
-			test.Error = err
-			tests = append(tests, test)
-			continue
+			if !strings.Contains(err.Error(), "ssh: unable to authenticate") {
+				test.Status = core.StatusDown
+				test.Error = err
+				tests = append(tests, test)
+				continue
+			}
 		}
-		defer client.Close()
+		if client != nil {
+			client.Close()
+		}
 
 		tests = append(tests, test)
 	}
@@ -49,10 +52,27 @@ func (p *sshProbe) Probe() (*core.Result, error) {
 }
 
 type SshProbeOptions struct {
-	Host string
-	Port int
+	Host    string
+	Port    int
+	HostKey *string
 }
 
 func NewSshProbe(options SshProbeOptions) (Probe, error) {
-	return &sshProbe{host: options.Host, port: options.Port}, nil
+	var hostKeyCallback ssh.HostKeyCallback
+
+	if options.HostKey == nil {
+		hostKeyCallback = ssh.InsecureIgnoreHostKey()
+	} else {
+		publicKey, err := ssh.ParsePublicKey([]byte(*options.HostKey))
+		if err != nil {
+			return nil, fmt.Errorf("unable to create ssh probe: %w", err)
+		}
+		hostKeyCallback = ssh.FixedHostKey(publicKey)
+	}
+
+	return &sshProbe{
+		host:            options.Host,
+		port:            options.Port,
+		hostKeyCallback: hostKeyCallback,
+	}, nil
 }

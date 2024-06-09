@@ -86,8 +86,9 @@ type HttpProbeConfig struct {
 }
 
 type SshProbeConfig struct {
-	Host string `yaml:"host"`
-	Port *int   `yaml:"port"`
+	Host    string  `yaml:"host"`
+	Port    *int    `yaml:"port"`
+	HostKey *string `yaml:"hostKey"`
 }
 
 type ProbeConfig struct {

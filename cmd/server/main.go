@@ -65,28 +65,35 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case PingProbeConfig:
 		p, err = probe.NewPingProbe(probe.PingProbeOptions{Address: v.Address})
 	case HttpProbeConfig:
-		maxRedirects := 0
-		if v.MaxRedirects == nil {
-			maxRedirects = 20
-		} else {
+		maxRedirects := 20
+		if v.MaxRedirects != nil {
 			if *v.MaxRedirects < 0 {
 				return nil, errors.New("MaxRedirects must be a positive number")
 			}
 			maxRedirects = *v.MaxRedirects
 		}
-		timeout := 0
-		if v.Timeout == nil {
-			timeout = 60
-		} else {
+		timeout := 60
+		if v.Timeout != nil {
 			if *v.Timeout < 0 {
 				return nil, errors.New("Timeout must be a positive number")
 			}
 			timeout = *v.Timeout
 		}
-		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: maxRedirects, Timeout: timeout})
+		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
+			Url:          v.Address,
+			MaxRedirects: maxRedirects,
+			Timeout:      timeout,
+		})
 	case SshProbeConfig:
-		break
-
+		port := 22
+		if v.Port != nil {
+			port = *v.Port
+		}
+		p, err = probe.NewSshProbe(probe.SshProbeOptions{
+			Host:    v.Host,
+			Port:    port,
+			HostKey: v.HostKey,
+		})
 	default:
 		p = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))

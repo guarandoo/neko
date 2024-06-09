@@ -85,6 +85,11 @@ type HttpProbeConfig struct {
 	Timeout      *int   `yaml:"timeout"`
 }
 
+type SshProbeConfig struct {
+	Host string `yaml:"host"`
+	Port *int   `yaml:"port"`
+}
+
 type ProbeConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
@@ -121,6 +126,15 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case "http":
 		var c struct {
 			Config HttpProbeConfig `yaml:"config"`
+		}
+		err := unmarshal(&c)
+		if err != nil {
+			return err
+		}
+		f.Config = c.Config
+	case "ssh":
+		var c struct {
+			Config SshProbeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {

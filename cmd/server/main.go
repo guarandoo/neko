@@ -84,6 +84,9 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			timeout = *v.Timeout
 		}
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{Url: v.Address, MaxRedirects: maxRedirects, Timeout: timeout})
+	case SshProbeConfig:
+		break
+
 	default:
 		p = nil
 		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))

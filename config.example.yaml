@@ -1,0 +1,44 @@
+notifiers:
+  my_discord_notifier:
+    type: discord_webhook
+    config:
+      url: https://discord.com/api/webhooks/webhook_id/webhook_token
+  my_smtp_notifier:
+    type: smtp
+    config:
+      host: smtp.example.com
+      port: 587
+      username: smtp_user
+      password: smtp_secret
+      sender: neko@example.com
+      recipients:
+        - john.doe@example.com
+monitors:
+  ssh-monitor:
+    interval: 60
+    probe:
+      type: ssh
+      config:
+        host: some-machine.example.com
+    notifiers:
+      - my_discord_notifier
+      - my_smtp_notifier
+  ping-monitor:
+    interval: 60
+    probe:
+      type: ping
+      config:
+        address: some-machine.example.com
+    notifiers:
+      - my_discord_notifier
+      - my_smtp_notifier
+  http-monitor:
+    interval: 10
+    probe:
+      type: http
+      config:
+        address: https://example.com
+        maxRedirects: 1
+    notifiers:
+      - my_discord_notifier
+      - my_smtp_notifier

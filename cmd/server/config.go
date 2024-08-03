@@ -91,6 +91,13 @@ type SshProbeConfig struct {
 	HostKey *string `yaml:"hostKey"`
 }
 
+type GroupProbeMemberConfig struct {
+}
+
+type GroupProbeConfig struct {
+	Members []GroupProbeMemberConfig `yaml:"members"`
+}
+
 type ProbeConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
@@ -142,6 +149,15 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			return err
 		}
 		f.Config = c.Config
+	case "group":
+		var c struct {
+			Config GroupProbeConfig `yaml:"config"`
+		}
+		err := unmarshal(&c)
+		if err == nil {
+			return err
+		}
+		f.Config = c.Config
 	default:
 		return fmt.Errorf("unknown probe type: %s", f.Type)
 	}
@@ -161,5 +177,5 @@ type MonitorConfig struct {
 
 type Configuration struct {
 	Notifiers map[string]NotifierConfig `yaml:"notifiers"`
-	Monitors  []MonitorConfig           `yaml:"monitors"`
+	Monitors  map[string]MonitorConfig  `yaml:"monitors"`
 }

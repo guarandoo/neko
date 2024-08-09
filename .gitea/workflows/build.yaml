@@ -31,9 +31,9 @@ jobs:
             [registry."gitea.calliope.rip"]
               http = true
               insecure = false
-      - name: 
+      - name: Build and push Docker image 
         uses: docker/build-push-action@v5
-        with: Build and push Docker image
+        with:
           context: .
           file: ./Dockerfile
           push: true

@@ -21,7 +21,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: build
-    if: gitea.ref == 'refs/head/main'
+    if: gitea.ref == 'refs/head/main' || gitea.ref == 'refs/head/actions'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -30,8 +30,7 @@ jobs:
           config-inline: |
             [registry."gitea.calliope.rip"]
               http = true
-              insecure = false
-      - name: Build and push Docker image 
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .

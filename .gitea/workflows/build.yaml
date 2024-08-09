@@ -21,7 +21,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: build
-    if: gitea.ref == 'refs/head/main' || gitea.ref == 'refs/head/actions'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx

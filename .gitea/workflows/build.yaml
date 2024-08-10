@@ -33,8 +33,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: gitea.calliope.rip
-          username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_SECRET }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

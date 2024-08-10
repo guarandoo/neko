@@ -33,12 +33,12 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: gitea.calliope.rip
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ gitea.repository_owner }}
+          password: ${{ secrets.GITEA_TOKEN }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: "gitea.calliope.rip/neko:${{gitea.sha}},gitea.calliope.rip/neko:latest"
+          tags: "gitea.calliope.rip/guarandoo/neko:${{gitea.sha}},gitea.calliope.rip/guarandoo/neko:latest"

@@ -4,3 +4,4 @@
 config.yaml
 Dockerfile
 .dockerignore
+Makefile

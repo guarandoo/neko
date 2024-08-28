@@ -1,20 +1,21 @@
 .DEFAULT_GOAL := default
 
-IMAGE ?= harbor.guarandoo.cloud/guarandoo/neko:latest
+TAG ?= latest
+IMAGE ?= gitea.calliope.rip/guarandoo/neko:$(TAG)
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
 .PHONY: build
 build:
 	docker buildx build \
-		--output "type=docker,push=false" \
-		--tag $(IMAGE) \
-		.
+	--output "type=docker,push=false" \
+	--tag $(IMAGE) \
+	.
 
-.PHONY publish
+.PHONY: publish
 publish:
 	docker buildx build \
-		--platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x \
-		--output "type=image,push=true" \
-		--tag $(IMAGE) \
-		.
+	--platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x \
+	--output "type=image,push=true" \
+	--tag $(IMAGE) \
+	.

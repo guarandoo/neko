@@ -46,7 +46,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/neko/config.yaml
-          environment:
+          env:
             name: NEKO_CONFIG
             value: /etc/neko/config.yaml
       volumes:

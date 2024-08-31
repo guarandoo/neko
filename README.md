@@ -2,6 +2,18 @@
 
 An(other) uptime monitor.
 
+## Installation
+
+### Binary
+
+### Helm
+
+This repository includes a Helm chart for deployment on Kubernetes
+
+```sh
+helm install -n neko neko
+```
+
 ## Configuration
 
 The configuration is loaded from a YAML file named `config.yaml` in the working directory.

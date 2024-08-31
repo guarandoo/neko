@@ -75,7 +75,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		timeout := 60
 		if v.Timeout != nil {
 			if *v.Timeout < 0 {
-				return nil, errors.New("Timeout must be a positive number")
+				return nil, errors.New("timeout must be a positive number")
 			}
 			timeout = *v.Timeout
 		}

@@ -1,6 +1,6 @@
 image:
   registry: gitea.calliope.rip
-  repository: neko
+  repository: guarandoo/neko
   tag:
   pullPolicy: IfNotPresent
 deployment:

@@ -14,15 +14,35 @@ See [config.example.yaml](config.example.yaml) for an example.
 
 You can run multiple instances across machines to provide redundancy or monitor your targets from multiple vantage points.
 
+### Monitors
+
+A monitor is composed of a [probe](#probes) and zero or more [notifiers](#notifiers).
+
+```yaml
+interval: 1m
+probe:
+  type: ssh
+  config:
+    host: some-machine.example.com
+notifiers:
+  - my_discord_notifier
+  - my_smtp_notifier
+```
+
+| Key         | Description                              |
+| ----------- | ---------------------------------------- |
+| `interval`  | Amount of time in between probe attempts |
+| `probe`     | A [probe](#probes) configuration         |
+| `notifiers` | A list of [notifiers](#notifiers)        |
+
 ### Notifiers
 
 #### Discord Webhook
 
 ```yaml
-my_discord_notifier:
-  type: discord_webhook
-  config:
-    url: https://discord.com/api/webhooks/webhook_id/webhook_token
+type: discord_webhook
+config:
+  url: https://discord.com/api/webhooks/webhook_id/webhook_token
 ```
 
 #### Gotify
@@ -46,50 +66,35 @@ config:
 #### Ping
 
 ```yaml
-interval: 60
-probe:
-  type: ping
-  config:
-    address: some-machine.example.com
-notifiers:
-  - my_discord_notifier
-  - my_smtp_notifier
+type: ping
+config:
+  address: some-machine.example.com
 ```
 
 | Key              | Description |
 | ---------------- | ----------- |
-| `config.address` |             |
+| `address` |             |
 
 #### HTTP
 
 ```yaml
-interval: 10
-probe:
-  type: http
-  config:
-    address: https://example.com
-    maxRedirects: 1
-notifiers:
-  - my_discord_notifier
-  - my_smtp_notifier
+type: http
+config:
+  address: https://example.com
+  maxRedirects: 1
 ```
 
 | Key                   | Description                         |
 | --------------------- | ----------------------------------- |
-| `config.address`      |                                     |
-| `config.maxRedirects` | Maximum number of allowed redirects |
+| `address`      |                                     |
+| `maxRedirects` | Maximum number of allowed redirects |
 
 #### SSH
 
 ```yaml
-interval: 60
-probe:
-  type: ssh
-  config:
-    host: some-machine.example.com
-notifiers:
-  - my_discord_notifier
-  - my_smtp_notifier
+type: ssh
+config:
+  host: some-machine.example.com
 ```
 
 #### SQL

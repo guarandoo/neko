@@ -7,4 +7,16 @@ deployment:
   enabled: true
   kind: Deployment
   replicas: 1
+  revisionHistoryLimit: 1
+  labels: {}
+  annotations: {}
+  minReadySeconds: 0
+  podAnnotations: {}
+  podLabels: {}
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+nameOverride:
 # fullNameOverride:

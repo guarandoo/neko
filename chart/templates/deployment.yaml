@@ -2,33 +2,42 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "neko.fullname" }}
-  namespace: {{ template "neko.namespace" }}
+  name: {{ template "neko.fullname" . }}
+  namespace: {{ template "neko.namespace" . }}
   labels:
   {{- include "neko.labels" . | nindent 4 }}
   {{- with .Values.deployment.labels }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
+  annotations:
+  {{- with .Values.deployment.annotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
+  {{- if .Values.deployment.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+  {{- end }}
   selector:
     matchLabels:
-      app:  neko
+      {{- include "neko.labelselector" . | nindent 6 }}
+  strategy: {{ toYaml .Values.updateStrategy | nindent 4 }}
+  minReadySeconds: {{ .Values.deployment.minReadySeconds }}
   template:
     metadata:
-      labels:
-      {{- include "neko.labels" . | nindent 4 }}
-      {{- with .Values.deployment.labels }}
-      {{- toYaml . | nindent 4 }}
-      {{- end }}
       annotations:
-      {{- with .Values.deployment.annotations }}
-      {{- toYaml . | nindent 4}}
+      {{- with .Values.deployment.podAnnotations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+      {{- include "neko.labels" . | nindent 8 -}}
+      {{- with .Values.deployment.podLabels }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       containers:
-        - name: neko
-          image: neko:latest
+        - name: {{ template "neko.fullname" . }}
+          image: {{ template "neko.image-name" . }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

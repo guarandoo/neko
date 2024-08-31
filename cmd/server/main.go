@@ -193,7 +193,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			ticker := time.NewTicker(interval * time.Second)
+			ticker := time.NewTicker(interval)
 			log.Printf("starting monitor %s", monitor.Name)
 			for {
 				<-ticker.C

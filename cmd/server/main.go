@@ -188,7 +188,12 @@ func main() {
 				log.Fatal(err)
 			}
 
-			ticker := time.NewTicker(time.Duration(monitor.Interval) * time.Second)
+			interval, err := time.ParseDuration(monitor.Interval)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ticker := time.NewTicker(interval * time.Second)
 			log.Printf("starting monitor %s", monitor.Name)
 			for {
 				<-ticker.C

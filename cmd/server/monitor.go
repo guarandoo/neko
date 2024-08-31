@@ -8,7 +8,7 @@ import (
 
 type Monitor struct {
 	Name      string
-	Interval  int
+	Interval  string
 	Probe     probe.Probe
 	Status    core.Status
 	Notifiers []notifier.Notifier

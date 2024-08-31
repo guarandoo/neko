@@ -106,7 +106,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	f.Type = t.Type
 	switch t.Type {
-	case "exec":		
+	case "exec":
 		var c struct {
 			Config ExecProbeConfig `yaml:"config"`
 		}
@@ -154,7 +154,7 @@ type ProbeNotifierConfig struct {
 
 type MonitorConfig struct {
 	Name      string                `yaml:"name"`
-	Interval  int                   `yaml:"interval"`
+	Interval  string                `yaml:"interval"`
 	Probe     ProbeConfig           `yaml:"probe"`
 	Notifiers []ProbeNotifierConfig `yaml:"notifiers"`
 }

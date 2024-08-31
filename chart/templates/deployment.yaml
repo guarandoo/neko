@@ -47,8 +47,8 @@ spec:
             - name: config
               mountPath: /etc/neko/config.yaml
           env:
-            name: NEKO_CONFIG
-            value: /etc/neko/config.yaml
+            - name: NEKO_CONFIG
+              value: /etc/neko/config.yaml
       volumes:
         - name: config
           configMap:

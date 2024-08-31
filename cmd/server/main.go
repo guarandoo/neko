@@ -96,7 +96,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		})
 	default:
 		p = nil
-		err = errors.New(fmt.Sprintf("unknown probe type: %s", pc.Type))
+		err = fmt.Errorf("unknown probe type: %s", pc.Type)
 	}
 	return p, err
 }
@@ -120,7 +120,7 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token})
 	default:
 		n = nil
-		err = errors.New(fmt.Sprintf("unknown probe type: %s", nc.Type))
+		err = fmt.Errorf("unknown probe type: %s", nc.Type)
 	}
 	return n, err
 }

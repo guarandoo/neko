@@ -118,6 +118,16 @@ config:
 
 #### Domain
 
+```yaml
+type: domain
+config:
+  domain: https://example.com
+```
+
+| Key    | Required | Description |
+| ------ | -------- | ----------- |
+| `domain` | Yes      |             |
+
 ##### Extras
 
 | Key         | Value                       |

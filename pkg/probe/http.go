@@ -40,7 +40,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				redirectCount++
 				if p.maxRedirects >= 0 && redirectCount > p.maxRedirects {
-					return fmt.Errorf("Exceeded allowed redirect count %v", p.maxRedirects)
+					return fmt.Errorf("exceeded allowed redirect count %v", p.maxRedirects)
 				}
 
 				return nil

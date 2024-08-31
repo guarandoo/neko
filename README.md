@@ -29,11 +29,11 @@ notifiers:
   - my_smtp_notifier
 ```
 
-| Key         | Description                              |
-| ----------- | ---------------------------------------- |
-| `interval`  | Amount of time in between probe attempts |
-| `probe`     | A [probe](#probes) configuration         |
-| `notifiers` | A list of [notifiers](#notifiers)        |
+| Key         | Required | Description                              |
+| ----------- | -------- | ---------------------------------------- |
+| `interval`  | Yes      | Amount of time in between probe attempts |
+| `probe`     | Yes      | A [probe](#probes) configuration         |
+| `notifiers` | No       | A list of [notifiers](#notifiers)        |
 
 ### Notifiers
 
@@ -44,6 +44,10 @@ type: discord_webhook
 config:
   url: https://discord.com/api/webhooks/webhook_id/webhook_token
 ```
+
+| Key   | Required | Description                |
+| ----- | -------- | -------------------------- |
+| `url` | Yes      | URL of the Discord webhook |
 
 #### Gotify
 
@@ -61,6 +65,15 @@ config:
     - john.doe@example.com
 ```
 
+| Key          | Required | Description                                            |
+| ------------ | -------- | ------------------------------------------------------ |
+| `host`       | Yes      | SMTP Host                                              |
+| `port`       | Yes      | SMTP Port                                              |
+| `username`   | No       | SMTP Username                                          |
+| `password`   | No       | SMTP Password                                          |
+| `sender`     | Yes      | Mail address that will be used to send outgoing emails |
+| `recipients` | No       | List of mail addresses to notify                       |
+
 ### Probes
 
 #### Ping
@@ -71,9 +84,9 @@ config:
   address: some-machine.example.com
 ```
 
-| Key              | Description |
-| ---------------- | ----------- |
-| `address` |             |
+| Key       | Required | Description |
+| --------- | -------- | ----------- |
+| `address` | Yes      |             |
 
 #### HTTP
 
@@ -84,10 +97,10 @@ config:
   maxRedirects: 1
 ```
 
-| Key                   | Description                         |
-| --------------------- | ----------------------------------- |
-| `address`      |                                     |
-| `maxRedirects` | Maximum number of allowed redirects |
+| Key            | Required | Description                         |
+| -------------- | -------- | ----------------------------------- |
+| `address`      | Yes      |                                     |
+| `maxRedirects` | No       | Maximum number of allowed redirects |
 
 #### SSH
 
@@ -96,6 +109,10 @@ type: ssh
 config:
   host: some-machine.example.com
 ```
+
+| Key    | Required | Description |
+| ------ | -------- | ----------- |
+| `host` | Yes      |             |
 
 #### SQL
 

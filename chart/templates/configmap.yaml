@@ -5,4 +5,5 @@ metadata:
   name: {{ template "neko.configmapName" . }}
   namespace: {{ template "neko.namespace" . }}
 data:
-  config.yaml: {{ toYaml .Values.config }}
+  config.yaml: | 
+    {{ toYaml .Values.config | nindent 4 }}

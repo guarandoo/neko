@@ -33,7 +33,7 @@ func (p *domainProbe) Probe() (*core.Result, error) {
 		return nil, err
 	}
 
-	remaining := time.Since(expiration)
+	remaining := time.Since(expiration).Abs()
 
 	extras := make(map[string]interface{})
 	extras["remaining"] = remaining
@@ -45,7 +45,7 @@ func (p *domainProbe) Probe() (*core.Result, error) {
 		Extras: extras,
 	}
 
-	if remaining.Abs() > p.threshold {
+	if remaining > p.threshold {
 		test.Status = core.StatusUp
 	}
 

@@ -15,7 +15,7 @@ notifiers:
         - john.doe@example.com
 monitors:
   ssh-monitor:
-    interval: 60
+    interval: 1m
     probe:
       type: ssh
       config:
@@ -24,7 +24,7 @@ monitors:
       - my_discord_notifier
       - my_smtp_notifier
   ping-monitor:
-    interval: 60
+    interval: 1m
     probe:
       type: ping
       config:
@@ -33,12 +33,21 @@ monitors:
       - my_discord_notifier
       - my_smtp_notifier
   http-monitor:
-    interval: 10
+    interval: 1m
     probe:
       type: http
       config:
         address: https://example.com
         maxRedirects: 1
+    notifiers:
+      - my_discord_notifier
+      - my_smtp_notifier
+  domain-monitor:
+    interval: 1d
+    probe:
+      type: domain
+      config:
+        domain: https://example.com
     notifiers:
       - my_discord_notifier
       - my_smtp_notifier

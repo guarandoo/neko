@@ -49,3 +49,6 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 {{- end -}}
 
+{{- define "neko.configmapName" -}}
+{{- template "neko.fullname" . -}}-config
+{{- end -}}

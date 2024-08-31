@@ -19,4 +19,5 @@ updateStrategy:
     maxUnavailable: 0
     maxSurge: 1
 nameOverride:
-# fullNameOverride:
+fullnameOverride:
+config: {}

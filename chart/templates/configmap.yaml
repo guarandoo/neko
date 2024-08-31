@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "neko.configmapName" . }}
+  namespace: {{ template "neko.namespace" . }}
+data: {{ toYaml .Values.config }}

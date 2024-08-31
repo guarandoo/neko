@@ -49,4 +49,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: config
+            name: {{ template "neko.configmapName" . }}

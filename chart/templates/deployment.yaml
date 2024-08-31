@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "neko.fullname" }}
+  namespace: {{ template "neko.namespace" }}
+  labels:
+  {{- include "neko.labels" . | nindent 4 }}
+  {{- with .Values.deployment.labels }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  neko
+  template:
+    metadata:
+      labels:
+      {{- include "neko.labels" . | nindent 4 }}
+      {{- with .Values.deployment.labels }}
+      {{- toYaml . | nindent 4 }}
+      {{- end }}
+      annotations:
+      {{- with .Values.deployment.annotations }}
+      {{- toYaml . | nindent 4}}
+      {{- end }}
+    spec:
+      containers:
+        - name: neko
+          image: neko:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/neko/config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: config

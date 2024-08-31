@@ -1,0 +1,10 @@
+image:
+  registry: gitea.calliope.rip
+  repository: neko
+  tag:
+  pullPolicy: IfNotPresent
+deployment:
+  enabled: true
+  kind: Deployment
+  replicas: 1
+# fullNameOverride:

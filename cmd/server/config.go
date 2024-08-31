@@ -106,7 +106,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	f.Type = t.Type
 	switch t.Type {
-	case "exec":
+	case "exec":		
 		var c struct {
 			Config ExecProbeConfig `yaml:"config"`
 		}

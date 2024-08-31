@@ -38,7 +38,12 @@ func (p *domainProbe) Probe() (*core.Result, error) {
 	extras := make(map[string]interface{})
 	extras["remaining"] = remaining
 
-	test := core.Test{Target: p.domain, Status: core.StatusDown, Error: nil}
+	test := core.Test{
+		Target: p.domain,
+		Status: core.StatusDown,
+		Error:  nil,
+		Extras: extras,
+	}
 
 	if remaining.Abs() > p.threshold {
 		test.Status = core.StatusUp

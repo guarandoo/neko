@@ -91,6 +91,12 @@ type SshProbeConfig struct {
 	HostKey *string `yaml:"hostKey"`
 }
 
+type DomainProbeConfig struct {
+	Domain    string  `yaml:"domain"`
+	Timeout   *int    `yaml:"timeout"`
+	Threshold *string `yaml:"threshold"`
+}
+
 type ProbeConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
@@ -136,6 +142,15 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case "ssh":
 		var c struct {
 			Config SshProbeConfig `yaml:"config"`
+		}
+		err := unmarshal(&c)
+		if err != nil {
+			return err
+		}
+		f.Config = c.Config
+	case "domain":
+		var c struct {
+			Config DomainProbeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {

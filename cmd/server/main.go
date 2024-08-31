@@ -94,6 +94,24 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			Port:    port,
 			HostKey: v.HostKey,
 		})
+	case DomainProbeConfig:
+		timeout := 60
+		if v.Timeout != nil {
+			timeout = *v.Timeout
+		}
+
+		threshold := time.Duration(1)
+		if v.Threshold != nil {
+			threshold, err = time.ParseDuration(*v.Threshold)
+			if err != nil {
+				return nil, err
+			}
+		}
+		p, err = probe.NewDomainProbe(probe.DomainProbeOptions{
+			Domain:    v.Domain,
+			Timeout:   timeout,
+			Threshold: threshold,
+		})
 	default:
 		p = nil
 		err = fmt.Errorf("unknown probe type: %s", pc.Type)

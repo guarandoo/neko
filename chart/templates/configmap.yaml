@@ -4,4 +4,5 @@ kind: ConfigMap
 metadata:
   name: {{ template "neko.configmapName" . }}
   namespace: {{ template "neko.namespace" . }}
-data: {{ toYaml .Values.config }}
+data:
+  config.yaml: {{ toYaml .Values.config }}

@@ -8,7 +8,7 @@ The configuration is loaded from a YAML file named `config.yaml` in the working 
 
 > ❕ This path can be controlled by setting the `NEKO_CONFIG` environment variable.
 
-See [values.yaml](values.yaml) for an example.
+See [config.example.yaml](config.example.yaml) for an example.
 
 ### Distributed Mode
 

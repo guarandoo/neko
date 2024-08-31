@@ -45,6 +45,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: config
+              subPath: config.yaml
               mountPath: /etc/neko/config.yaml
           env:
             - name: NEKO_CONFIG

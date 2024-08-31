@@ -3,7 +3,7 @@ name: neko
 description: blah
 type: application
 version: 1.0.0
-appVersion: v0.1.0"
+appVersion: v0.1.0
 kubeVersion: ">=1.20.0-0"
 keywords:
   - neko

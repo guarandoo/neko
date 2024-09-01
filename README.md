@@ -32,6 +32,8 @@ make docker-multiarch-image
 
 ### Binary
 
+Grab prebuilt binaries from [Releases](releases)
+
 ### Helm
 
 This repository includes a Helm chart for deployment on Kubernetes

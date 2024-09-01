@@ -32,7 +32,7 @@ make docker-multiarch-image
 
 ### Binary
 
-Grab prebuilt binaries from [Releases](releases)
+Grab prebuilt binaries from [Releases](/guarandoo/neko/releases)
 
 ### Helm
 

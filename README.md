@@ -18,6 +18,18 @@ To build binaries for all supported platforms:
 make all-binaries
 ```
 
+To build a Docker image for your current platform:
+
+```sh
+make docker-image
+```
+
+To build a multi-arch Docker image
+
+```sh
+make docker-multiarch-image
+```
+
 ### Binary
 
 ### Helm

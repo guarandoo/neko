@@ -77,6 +77,13 @@ notifiers:
 
 ### Notifiers
 
+Most notifiers offer the ability to customize the message in the notification, for those that do the following variables are available.
+
+| Variable | Description                                   |
+| -------- | --------------------------------------------- |
+| Name     | Name of the probe that triggered the notifier |
+| Reason   | The result of the probe                       |
+
 #### Discord Webhook
 
 ```yaml

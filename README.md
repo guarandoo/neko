@@ -12,7 +12,7 @@ To build a binary for your current platform:
 make
 ```
 
-To build binaries for all platforms:
+To build binaries for all supported platforms:
 
 ```sh
 make all-binaries

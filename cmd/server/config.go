@@ -14,7 +14,8 @@ type SmtpNotifierCOnfig struct {
 }
 
 type DiscordWebhookNotifierConfig struct {
-	Url string `yaml:"url"`
+	Url             string  `yaml:"url"`
+	MessageTemplate *string `yaml:"messageTemplate"`
 }
 
 type GotifyNotifierConfig struct {

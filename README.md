@@ -83,11 +83,14 @@ notifiers:
 type: discord_webhook
 config:
   url: https://discord.com/api/webhooks/webhook_id/webhook_token
+  messageTemplate: |-
+    {{.Name}} is {{.Reason}}
 ```
 
-| Key   | Required | Description                |
-| ----- | -------- | -------------------------- |
-| `url` | Yes      | URL of the Discord webhook |
+| Key               | Required | Description                |
+| ----------------- | -------- | -------------------------- |
+| `url`             | Yes      | URL of the Discord webhook |
+| `messageTemplate` | No       | URL of the Discord webhook |
 
 #### Gotify
 
@@ -164,8 +167,8 @@ config:
   domain: https://example.com
 ```
 
-| Key    | Required | Description |
-| ------ | -------- | ----------- |
+| Key      | Required | Description |
+| -------- | -------- | ----------- |
 | `domain` | Yes      |             |
 
 ##### Extras

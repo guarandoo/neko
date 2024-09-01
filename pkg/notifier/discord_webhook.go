@@ -6,15 +6,33 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"text/template"
 )
 
 type discordWebhookNotifier struct {
-	url string
+	url             string
+	messageTemplate string
 }
 
 func (n *discordWebhookNotifier) Notify(name string, reason string) error {
+	tpl, err := template.New(name).Parse(n.messageTemplate)
+	if err != nil {
+		return err
+	}
+
+	data := make(map[string]interface{})
+	data["Name"] = name
+	data["Reason"] = reason
+
+	var msgBuf bytes.Buffer
+	if err := tpl.Execute(&msgBuf, data); err != nil {
+		return err
+	}
+
+	message := msgBuf.String()
+
 	body := map[string]interface{}{
-		"content": fmt.Sprintf("%s: %s", name, reason),
+		"content": message,
 	}
 
 	payload, err := json.Marshal(body)
@@ -36,9 +54,10 @@ func (n *discordWebhookNotifier) Notify(name string, reason string) error {
 }
 
 type DiscordWebhookOptions struct {
-	Url string
+	Url             string
+	MessageTemplate string
 }
 
 func NewDiscordWebhookNotifier(options DiscordWebhookOptions) (Notifier, error) {
-	return &discordWebhookNotifier{url: options.Url}, nil
+	return &discordWebhookNotifier{url: options.Url, messageTemplate: options.MessageTemplate}, nil
 }

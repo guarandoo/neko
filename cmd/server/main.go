@@ -133,7 +133,11 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 			Recipients: v.Recipients,
 		})
 	case DiscordWebhookNotifierConfig:
-		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{Url: v.Url})
+		messageTemplate := "{{.Name}}: {{.Reason}}"
+		if v.MessageTemplate != nil {
+			messageTemplate = *v.MessageTemplate
+		}
+		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{Url: v.Url, MessageTemplate: messageTemplate})
 	case GotifyNotifierConfig:
 		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token})
 	default:

@@ -2,6 +2,26 @@
 
 An(other) uptime monitor.
 
+## Table of Contents
+
+- [Installation](#installation)
+  - [Building](#building)
+  - [Binary](#binary)
+  - [Helm](#helm)
+- [Configuraton](#configuration)
+  - [Distributed Mode](#distributed-mode)
+  - [Monitors](#monitors)
+  - [Notifiers](#notifiers)
+    - [Discord Webhook](#discord-webhook)
+    - [Gotify](#gotify)
+    - [SMTP](#smtp)
+  - [Probes](#probes)
+    - [Ping](#ping)
+    - [HTTP](#http)
+    - [SSH](#ssh)
+    - [SQL](#sql)
+    - [Domain](#domain)
+
 ## Installation
 
 ### Building

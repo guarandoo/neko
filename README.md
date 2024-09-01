@@ -90,7 +90,7 @@ config:
 | Key               | Required | Description                |
 | ----------------- | -------- | -------------------------- |
 | `url`             | Yes      | URL of the Discord webhook |
-| `messageTemplate` | No       | URL of the Discord webhook |
+| `messageTemplate` | No       | Message template           |
 
 #### Gotify
 

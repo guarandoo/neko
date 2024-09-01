@@ -1,27 +1,53 @@
-.DEFAULT_GOAL := default
+IMAGE ?= gitea.calliope.rip/guarandoo/neko
 
-TAG ?= latest
-IMAGE ?= gitea.calliope.rip/guarandoo/neko:$(TAG)
+GO := go
+MAKE := make
+GOOS := $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
+
+DOCKER_BUILD_PLATFORMS ?= linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+BIN_NAME := neko
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
-.PHONY: build
-build:
-	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
-	-o neko \
-	./cmd/server
+.PHONY: default
+default: binary
 
-.PHONY: build-image
-build-image:
-	docker buildx build \
-	--output "type=docker,push=false" \
-	--tag $(IMAGE) \
-	.
+binary:
+	CGO_ENABLED=0 go build \
+	  -o ./dist/${GOOS}/${GOARCH}/${BIN_NAME} \
+	  ./cmd/server
 
-.PHONY: docker
-docker:
-	docker buildx build \
-	--platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x \
-	--output "type=image,push=true" \
-	--tag $(IMAGE) \
-	.
+binary-linux-386: export GOOS := linux
+binary-linux-386: export GOARCH := 386
+binary-linux-386:
+	$(MAKE) binary
+
+binary-linux-amd64: export GOOS := linux
+binary-linux-amd64: export GOARCH := amd64
+binary-linux-amd64:
+	$(MAKE) binary
+
+binary-windows-amd64: export GOOS := windows
+binary-windows-amd64: export GOARCH := amd64
+binary-windows-amd64: export BIN_NAME := neko.exe
+binary-windows-amd64:
+	$(MAKE) binary
+
+binary-darwin-amd64: export GOOS := darwin
+binary-darwin-amd64: export GOARCH := amd64
+binary-darwin-amd64:
+	$(MAKE) binary
+
+all-binaries: binary-windows-amd64 binary-linux-386 binary-linux-amd64 binary-darwin-amd64
+
+docker-image: export DOCKER_BUILDX_ARGS := --load
+docker-image: export DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
+docker-image:
+	$(MAKE) docker-latest
+
+docker-multiarch-image:
+	$(MAKE) docker-latest
+
+docker-%:
+	docker buildx build $(DOCKER_BUILDX_ARGS) -t $(IMAGE):$* --platform $(DOCKER_BUILD_PLATFORMS) -f Dockerfile .

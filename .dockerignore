@@ -1,8 +1,15 @@
-.vscode/
 .git/
+.gitea/
+.vscode/
 
-config.yaml
+chart/
+dist/
+
 Dockerfile
 .dockerignore
 Makefile
-chart/
+README.md
+
+config.yaml
+config.example.yaml
+values.yaml

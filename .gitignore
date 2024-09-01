@@ -1,5 +1,5 @@
-.vscode
-vendor
+.vscode/
+dist/
+vendor/
 config.yaml
 values.yaml
-neko

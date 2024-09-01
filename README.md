@@ -4,6 +4,20 @@ An(other) uptime monitor.
 
 ## Installation
 
+### Building
+
+To build a binary for your current platform:
+
+```sh
+make
+```
+
+To build binaries for all platforms:
+
+```sh
+make all-binaries
+```
+
 ### Binary
 
 ### Helm

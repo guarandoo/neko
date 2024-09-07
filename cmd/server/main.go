@@ -148,9 +148,10 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 }
 
 func main() {
-	cfg := os.Getenv("NEKO_CONFIG")
-	if len(cfg) == 0 {
-		cfg = "config.yaml"
+	cfg := "config.yaml"
+	cfgEnv := os.Getenv("NEKO_CONFIG")
+	if len(cfgEnv) == 0 {
+		cfg = cfgEnv
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -179,6 +180,10 @@ func main() {
 	}
 	if config.Instance != nil {
 		instance = *config.Instance
+	}
+	instanceEnv := os.Getenv("NEKO_INSTANCE")
+	if len(instanceEnv) == 0 {
+		instance = instanceEnv
 	}
 
 	if err != nil {

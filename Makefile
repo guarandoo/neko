@@ -49,5 +49,9 @@ docker-image:
 docker-multiarch-image:
 	$(MAKE) docker-latest
 
+publish-docker-multiarch-image: export DOCKER_BUILDX_ARGS := --push
+publish-docker-multiarch-image:
+	$(MAKE) docker-latest
+
 docker-%:
 	docker buildx build $(DOCKER_BUILDX_ARGS) -t $(IMAGE):$* --platform $(DOCKER_BUILD_PLATFORMS) -f Dockerfile .

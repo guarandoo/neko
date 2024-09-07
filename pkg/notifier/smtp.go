@@ -14,7 +14,7 @@ type smtpNotifier struct {
 	recipients []string
 }
 
-func (n *smtpNotifier) Notify(name string, reason string) error {
+func (n *smtpNotifier) Notify(instance string, name string, reason string) error {
 	msg := ""
 	msg += fmt.Sprintf("From: %v\n", n.sender)
 	msg += fmt.Sprintf("To: %v\n", strings.Join(n.recipients, ","))

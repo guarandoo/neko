@@ -14,13 +14,14 @@ type discordWebhookNotifier struct {
 	messageTemplate string
 }
 
-func (n *discordWebhookNotifier) Notify(name string, reason string) error {
+func (n *discordWebhookNotifier) Notify(instance string, name string, reason string) error {
 	tpl, err := template.New(name).Parse(n.messageTemplate)
 	if err != nil {
 		return err
 	}
 
 	data := make(map[string]interface{})
+	data["Instance"] = instance
 	data["Name"] = name
 	data["Reason"] = reason
 

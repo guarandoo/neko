@@ -176,6 +176,7 @@ type MonitorConfig struct {
 }
 
 type Configuration struct {
+	Instance  *string                   `yaml:"instance"`
 	Notifiers map[string]NotifierConfig `yaml:"notifiers"`
 	Monitors  []MonitorConfig           `yaml:"monitors"`
 }

@@ -173,6 +173,14 @@ func main() {
 	var config Configuration
 	err = yaml.Unmarshal(text, &config)
 
+	instance := ""
+	if hostname, err := os.Hostname(); err == nil {
+		instance = hostname
+	}
+	if config.Instance != nil {
+		instance = *config.Instance
+	}
+
 	if err != nil {
 		log.Fatalf("unable to parse config: %s", err)
 	}
@@ -239,7 +247,7 @@ func main() {
 
 				if previousStatus != status {
 					for _, n := range monitor.Notifiers {
-						if err := n.Notify(monitor.Name, fmt.Sprintf("%v", status)); err != nil {
+						if err := n.Notify(instance, monitor.Name, fmt.Sprintf("%v", status)); err != nil {
 							log.Printf("unable to notify: %s", err)
 						}
 					}

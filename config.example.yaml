@@ -3,6 +3,8 @@ notifiers:
     type: discord_webhook
     config:
       url: https://discord.com/api/webhooks/webhook_id/webhook_token
+      # reuseMessage: true
+      # lastMessageId:
   my_smtp_notifier:
     type: smtp
     config:

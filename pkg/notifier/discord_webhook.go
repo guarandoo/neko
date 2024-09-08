@@ -3,15 +3,91 @@ package notifier
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"text/template"
 )
 
 type discordWebhookNotifier struct {
-	url             string
-	messageTemplate string
+	url               string
+	messageTemplate   string
+	lastMessageId     *string
+	persistentMessage bool
+}
+
+type discordWebhookReply struct {
+	Id string `json:"id"`
+}
+
+func (n *discordWebhookNotifier) editMessage(messageId string, content string) (*discordWebhookReply, error) {
+	body := map[string]interface{}{
+		"content": content,
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal payload: %w", err)
+	}
+
+	buf := bytes.NewBuffer(payload)
+	url := fmt.Sprintf("%s/messages/%s", n.url, messageId)
+	req, err := http.NewRequest(http.MethodPatch, url, buf)
+	if err != nil {
+		return nil, fmt.Errorf("unable to make Discord request: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to make Discord request: %w", err)
+	}
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return nil, fmt.Errorf("received non-success status code: %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+
+	j := discordWebhookReply{}
+	err = json.NewDecoder(res.Body).Decode(&j)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse response body: %w", err)
+	}
+
+	return &j, nil
+}
+
+func sendMessage(url string, content string) (*discordWebhookReply, error) {
+	body := map[string]interface{}{
+		"content": content,
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal payload: %w", err)
+	}
+
+	buf := bytes.NewBuffer(payload)
+
+	url = fmt.Sprintf("%s?wait=true", url)
+	res, err := http.Post(url, "application/json", buf)
+	if err != nil {
+		return nil, fmt.Errorf("unable to make Discord request: %w", err)
+	}
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return nil, fmt.Errorf("received non-success status code: %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+	j := discordWebhookReply{}
+	err = json.NewDecoder(res.Body).Decode(&j)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse response body: %w", err)
+	}
+
+	return &j, nil
 }
 
 func (n *discordWebhookNotifier) Notify(instance string, name string, reason string) error {
@@ -32,33 +108,40 @@ func (n *discordWebhookNotifier) Notify(instance string, name string, reason str
 
 	message := msgBuf.String()
 
-	body := map[string]interface{}{
-		"content": message,
-	}
-
-	payload, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("unable to marshal payload: %w", err)
-	}
-
-	buf := bytes.NewBuffer(payload)
-	res, err := http.Post(n.url, "application/json", buf)
-	if err != nil {
-		return fmt.Errorf("unable to make Discord request: %w", err)
-	}
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return errors.New("unable to make Discord request")
+	if n.persistentMessage && n.lastMessageId != nil {
+		res, err := n.editMessage(*n.lastMessageId, message)
+		if err == nil {
+			n.lastMessageId = &res.Id
+		} else {
+			res, err = sendMessage(n.url, message)
+			if err != nil {
+				return err
+			}
+			n.lastMessageId = &res.Id
+		}
+	} else {
+		res, err := sendMessage(n.url, message)
+		if err != nil {
+			return err
+		}
+		n.lastMessageId = &res.Id
 	}
 
 	return nil
 }
 
 type DiscordWebhookOptions struct {
-	Url             string
-	MessageTemplate string
+	Url               string
+	MessageTemplate   string
+	LastMessageId     *string
+	PersistentMessage bool
 }
 
 func NewDiscordWebhookNotifier(options DiscordWebhookOptions) (Notifier, error) {
-	return &discordWebhookNotifier{url: options.Url, messageTemplate: options.MessageTemplate}, nil
+	return &discordWebhookNotifier{
+		url:               options.Url,
+		messageTemplate:   options.MessageTemplate,
+		lastMessageId:     options.LastMessageId,
+		persistentMessage: options.PersistentMessage,
+	}, nil
 }

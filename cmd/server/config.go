@@ -16,6 +16,8 @@ type SmtpNotifierCOnfig struct {
 type DiscordWebhookNotifierConfig struct {
 	Url             string  `yaml:"url"`
 	MessageTemplate *string `yaml:"messageTemplate"`
+	MessageId       *string `yaml:"messageId"`
+	ReuseMessage    bool    `yaml:"reuseMessage"`
 }
 
 type GotifyNotifierConfig struct {

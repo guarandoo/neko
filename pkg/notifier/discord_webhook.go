@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"text/template"
+	"time"
 )
 
 type discordWebhookNotifier struct {
@@ -13,6 +15,7 @@ type discordWebhookNotifier struct {
 	messageTemplate   string
 	lastMessageId     *string
 	persistentMessage bool
+	state             map[string]string
 }
 
 type discordWebhookReply struct {
@@ -100,13 +103,26 @@ func (n *discordWebhookNotifier) Notify(instance string, name string, reason str
 	data["Instance"] = instance
 	data["Name"] = name
 	data["Reason"] = reason
+	now := time.Now()
+	data["TimeNotify"] = now
+	data["TimeNotifyUnix"] = now.Unix()
 
 	var msgBuf bytes.Buffer
 	if err := tpl.Execute(&msgBuf, data); err != nil {
 		return err
 	}
 
-	message := msgBuf.String()
+	n.state[name] = msgBuf.String()
+
+	message := n.state[name]
+	if n.persistentMessage {
+		builder := strings.Builder{}
+		for _, v := range n.state {
+			builder.WriteString(v)
+			builder.WriteString("\n")
+		}
+		message = builder.String()
+	}
 
 	if n.persistentMessage && n.lastMessageId != nil {
 		res, err := n.editMessage(*n.lastMessageId, message)
@@ -143,5 +159,6 @@ func NewDiscordWebhookNotifier(options DiscordWebhookOptions) (Notifier, error) 
 		messageTemplate:   options.MessageTemplate,
 		lastMessageId:     options.LastMessageId,
 		persistentMessage: options.PersistentMessage,
+		state:             make(map[string]string),
 	}, nil
 }

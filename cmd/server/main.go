@@ -138,11 +138,18 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 		if v.MessageTemplate != nil {
 			messageTemplate = *v.MessageTemplate
 		}
+		reuseMessage := false
+		var messageId *string = nil
+		if v.ReuseMessage != nil {
+			reuseMessage = v.ReuseMessage.Enable
+			messageId = v.ReuseMessage.MessageId
+		}
+
 		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{
 			Url:               v.Url,
 			MessageTemplate:   messageTemplate,
-			LastMessageId:     v.MessageId,
-			PersistentMessage: v.ReuseMessage,
+			PersistentMessage: reuseMessage,
+			LastMessageId:     messageId,
 		})
 	case GotifyNotifierConfig:
 		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token})

@@ -13,11 +13,15 @@ type SmtpNotifierCOnfig struct {
 	Recipients []string `yaml:"recipients"`
 }
 
+type DiscordWebhookNotifierReuseMessageConfig struct {
+	Enable    bool    `yaml:"enable"`
+	MessageId *string `yaml:"messageId"`
+}
+
 type DiscordWebhookNotifierConfig struct {
-	Url             string  `yaml:"url"`
-	MessageTemplate *string `yaml:"messageTemplate"`
-	MessageId       *string `yaml:"messageId"`
-	ReuseMessage    bool    `yaml:"reuseMessage"`
+	Url             string                                    `yaml:"url"`
+	MessageTemplate *string                                   `yaml:"messageTemplate"`
+	ReuseMessage    *DiscordWebhookNotifierReuseMessageConfig `yaml:"reuseMessage"`
 }
 
 type GotifyNotifierConfig struct {

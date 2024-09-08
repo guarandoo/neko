@@ -1,5 +1,7 @@
 .vscode/
 dist/
 vendor/
+cmd/server/*.exe
+
 config.yaml
 values.yaml

@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/guarandoo/neko/pkg/core"
 	"github.com/guarandoo/neko/pkg/notifier"
 	"github.com/guarandoo/neko/pkg/probe"
 	"github.com/hashicorp/raft"
@@ -211,6 +212,7 @@ func main() {
 			Interval:  m.Interval,
 			Probe:     p,
 			Notifiers: maps.Values(notifiers),
+			Status:    core.StatusUnknown,
 		}
 		monitors = append(monitors, monitor)
 	}
@@ -250,7 +252,7 @@ func main() {
 
 				monitor.Status = status
 
-				if previousStatus != status {
+				if previousStatus != core.StatusUnknown && previousStatus != status {
 					for _, n := range monitor.Notifiers {
 						if err := n.Notify(instance, monitor.Name, fmt.Sprintf("%v", status)); err != nil {
 							log.Printf("unable to notify: %s", err)

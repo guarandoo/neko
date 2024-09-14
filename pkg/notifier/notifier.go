@@ -1,5 +1,5 @@
 package notifier
 
 type Notifier interface {
-	Notify(instance string, name string, reason string) error
+	Notify(name string, data map[string]interface{}) error
 }

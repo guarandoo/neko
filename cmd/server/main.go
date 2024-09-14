@@ -271,6 +271,8 @@ func main() {
 				log.Fatal(err)
 			}
 
+			lastTransition := time.Now()
+
 			ticker := time.NewTicker(interval)
 			log.Printf("starting monitor %s", monitor.Name)
 			for {
@@ -293,12 +295,24 @@ func main() {
 
 				monitor.Status = status
 
-				if previousStatus != core.StatusPending && previousStatus != status {
-					for _, n := range monitor.Notifiers {
-						if err := n.Notify(instance, monitor.Name, fmt.Sprintf("%v", status)); err != nil {
-							log.Printf("unable to notify: %s", err)
+				if previousStatus != status {
+					now := time.Now()
+					if previousStatus != core.StatusPending {
+						data := make(map[string]interface{})
+						data["Instance"] = instance
+						data["Name"] = monitor.Name
+						data["Reason"] = fmt.Sprintf("%v", status)
+						data["TimeNotify"] = now
+						data["TimeNotifyUnix"] = now.Unix()
+						data["Duration"] = now.Sub(lastTransition)
+
+						for _, n := range monitor.Notifiers {
+							if err := n.Notify(monitor.Name, data); err != nil {
+								log.Printf("unable to notify: %s", err)
+							}
 						}
 					}
+					lastTransition = now
 				}
 			}
 		}(m)

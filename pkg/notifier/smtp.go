@@ -14,13 +14,13 @@ type smtpNotifier struct {
 	recipients []string
 }
 
-func (n *smtpNotifier) Notify(instance string, name string, reason string) error {
+func (n *smtpNotifier) Notify(name string, data map[string]interface{}) error {
 	msg := ""
 	msg += fmt.Sprintf("From: %v\n", n.sender)
 	msg += fmt.Sprintf("To: %v\n", strings.Join(n.recipients, ","))
 	msg += fmt.Sprintf("Subject: %v\n", "Monitor Status Change")
 	msg += "\n"
-	msg += fmt.Sprintf("%s: %s", name, reason)
+	msg += fmt.Sprintf("%s: %s", name, data["reason"])
 	if err := smtp.SendMail(fmt.Sprintf("%v:%v", n.host, n.port), n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"text/template"
-	"time"
 )
 
 type discordWebhookNotifier struct {
@@ -93,19 +92,11 @@ func sendMessage(url string, content string) (*discordWebhookReply, error) {
 	return &j, nil
 }
 
-func (n *discordWebhookNotifier) Notify(instance string, name string, reason string) error {
+func (n *discordWebhookNotifier) Notify(name string, data map[string]interface{}) error {
 	tpl, err := template.New(name).Parse(n.messageTemplate)
 	if err != nil {
 		return err
 	}
-
-	data := make(map[string]interface{})
-	data["Instance"] = instance
-	data["Name"] = name
-	data["Reason"] = reason
-	now := time.Now()
-	data["TimeNotify"] = now
-	data["TimeNotifyUnix"] = now.Unix()
 
 	var msgBuf bytes.Buffer
 	if err := tpl.Execute(&msgBuf, data); err != nil {

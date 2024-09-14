@@ -71,7 +71,7 @@ The configuration is loaded from a YAML file named `config.yaml` in the working 
 | Key         | Required | Description                                                         |
 | ----------- | -------- | ------------------------------------------------------------------- |
 | `instance`  | No       | A unique instance identifier, defaults to hostname if not specified |
-| `notifiers` | Yes      | A list of [notifiers](#notifiers) configurations                    |
+| `notifiers` | Yes      | A list of [notifier](#notifiers) configurations                    |
 | `monitors`  | Yes      | A list of [probe](#probes) configurations                           |
 
 See [config.example.yaml](config.example.yaml) for a full example.

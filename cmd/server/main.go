@@ -73,7 +73,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			}
 			maxRedirects = *v.MaxRedirects
 		}
-		timeout := 60
+		timeout := 10
 		if v.Timeout != nil {
 			if *v.Timeout < 0 {
 				return nil, errors.New("timeout must be a positive number")

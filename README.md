@@ -95,11 +95,12 @@ notifiers:
   - my_smtp_notifier
 ```
 
-| Key         | Required | Description                              |
-| ----------- | -------- | ---------------------------------------- |
-| `interval`  | Yes      | Amount of time in between probe attempts |
-| `probe`     | Yes      | A [probe](#probes) configuration         |
-| `notifiers` | No       | A list of [notifiers](#notifiers)        |
+| Key                | Type           | Required | Description                                                     |
+| ------------------ | -------------- | -------- | --------------------------------------------------------------- |
+| `interval`         | Duration       | Yes      | Amount of time in between probe attempts                        |
+| `probe`            | ProbeConfig    | Yes      | A [probe](#probes) configuration                                |
+| `notifiers`        | NotifierConfig | No       | A list of [notifiers](#notifiers)                               |
+| `considerAllTests` | bool           | No       | Whether to require all tests to pass to consider the monitor Up |
 
 ### Notifiers
 

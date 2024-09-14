@@ -15,9 +15,10 @@ type gotifyNotifier struct {
 
 func (n *gotifyNotifier) Notify(name string, data map[string]interface{}) error {
 	body := map[string]interface{}{
-		"message":  fmt.Sprintf("%s: %s", name, data["status"]),
+		"message":  fmt.Sprintf("%s: %s", name, data["Status"]),
 		"priority": 2,
 		"title":    "Monitor Status Change",
+		"extras":   make(map[string]interface{}),
 	}
 
 	payload, err := json.Marshal(body)
@@ -26,12 +27,14 @@ func (n *gotifyNotifier) Notify(name string, data map[string]interface{}) error 
 	}
 
 	buf := bytes.NewBuffer(payload)
-	req, err := http.NewRequest(http.MethodPost, n.url, buf)
+	url := fmt.Sprintf("%s%s", n.url, "/message")
+	req, err := http.NewRequest(http.MethodPost, url, buf)
 	if err != nil {
 		return fmt.Errorf("unable to create Gotify request: %w", err)
 	}
 
 	req.Header.Add("X-Gotify-Key", n.token)
+	req.Header.Add("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("unable to make Gotify request: %w", err)
@@ -50,5 +53,5 @@ type GotifyOptions struct {
 }
 
 func NewGotifyNotifier(options GotifyOptions) (Notifier, error) {
-	return &gotifyNotifier{url: options.Url}, nil
+	return &gotifyNotifier{url: options.Url, token: options.Token}, nil
 }

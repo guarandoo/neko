@@ -71,7 +71,7 @@ The configuration is loaded from a YAML file named `config.yaml` in the working 
 | Key         | Required | Description                                                         |
 | ----------- | -------- | ------------------------------------------------------------------- |
 | `instance`  | No       | A unique instance identifier, defaults to hostname if not specified |
-| `notifiers` | Yes      | A list of [notifier](#notifiers) configurations                    |
+| `notifiers` | Yes      | A list of [notifier](#notifiers) configurations                     |
 | `monitors`  | Yes      | A list of [probe](#probes) configurations                           |
 
 See [config.example.yaml](config.example.yaml) for a full example.
@@ -212,6 +212,10 @@ config:
 
 #### DNS
 
+Test DNS resolution capability, the probe succeeds if there is at least 1 record of the specified type returned for the target.
+
+> ! This probe is primarily designed to test nameserver functionality, if you need to monitor records for a domain take a look at [domain](#domain).
+
 ```yaml
 type: dns
 config:
@@ -219,11 +223,15 @@ config:
   port: 53
   timeout: 60
   target: my.domain.com
+  type: A
 ```
 
-| Key       | Required | Description         |
-| --------- | -------- | ------------------- |
-| `host`    | Yes      | DNS server to query |
-| `port`    | No       |                     |
-| `timeout` | No       |                     |
-| `target`  | Yes      |                     |
+| Key          | Required | Description                                                      |
+| ------------ | -------- | ---------------------------------------------------------------- |
+| `host`       | Yes      | DNS server to query                                              |
+| `port`       | No       |                                                                  |
+| `timeout`    | No       |                                                                  |
+| `target`     | Yes      |                                                                  |
+| `recordType` | No       | Must be one of `Host` (A/AAAA), `NS` or `MX`, defaults to `Host` |
+
+> ❕ It is recommended that `target` be a stably resolvable domain otherwise this probe may produce false-positives.

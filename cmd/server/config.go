@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/guarandoo/neko/pkg/probe"
 )
 
 type SmtpNotifierCOnfig struct {
@@ -105,10 +107,11 @@ type DomainProbeConfig struct {
 }
 
 type DnsProbeConfig struct {
-	Server  string `yaml:"server"`
-	Timeout *int   `yaml:"timeout"`
-	Port    *int   `yaml:"port"`
-	Target  string `yaml:"target"`
+	Server     string            `yaml:"server"`
+	Timeout    *int              `yaml:"timeout"`
+	Port       *int              `yaml:"port"`
+	Target     string            `yaml:"target"`
+	RecordType *probe.RecordType `yaml:"recordType"`
 }
 
 type ProbeConfig struct {

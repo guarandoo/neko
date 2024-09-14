@@ -44,7 +44,7 @@ To build a Docker image for your current platform:
 make docker-image
 ```
 
-To build a multi-arch Docker image
+To build a multi-arch Docker image:
 
 ```sh
 make docker-multiarch-image

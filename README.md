@@ -153,6 +153,10 @@ config:
 
 ### Probes
 
+Certain probes may execute multiple tests; for example, the HTTP probe attempts the request using all resolved A and AAAA records.
+
+You can combine this with a monitor's `considerAllTests` setting to check if the target is reachable from all hosts instead of just one.
+
 #### Ping
 
 ```yaml

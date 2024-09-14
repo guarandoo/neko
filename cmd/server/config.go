@@ -104,6 +104,13 @@ type DomainProbeConfig struct {
 	Threshold *string `yaml:"threshold"`
 }
 
+type DnsProbeConfig struct {
+	Server  string `yaml:"server"`
+	Timeout *int   `yaml:"timeout"`
+	Port    *int   `yaml:"port"`
+	Target  string `yaml:"target"`
+}
+
 type ProbeConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
@@ -158,6 +165,15 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case "domain":
 		var c struct {
 			Config DomainProbeConfig `yaml:"config"`
+		}
+		err := unmarshal(&c)
+		if err != nil {
+			return err
+		}
+		f.Config = c.Config
+	case "dns":
+		var c struct {
+			Config DnsProbeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {

@@ -113,6 +113,29 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			Timeout:   timeout,
 			Threshold: threshold,
 		})
+	case DnsProbeConfig:
+		timeout := 60
+		if v.Timeout != nil {
+			timeout = *v.Timeout
+			if timeout < 0 {
+				return nil, errors.New("invalid timeout")
+			}
+		}
+
+		port := 53
+		if v.Port != nil {
+			port = *v.Port
+			if !(port > 0 && port <= 65535) {
+				return nil, errors.New("invalid port")
+			}
+		}
+
+		p, err = probe.NewDnsProbe(probe.DnsProbeOptions{
+			Server:  v.Server,
+			Port:    uint16(port),
+			Timeout: time.Duration(timeout),
+			Target:  v.Target,
+		})
 	default:
 		p = nil
 		err = fmt.Errorf("unknown probe type: %s", pc.Type)

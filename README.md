@@ -203,3 +203,21 @@ config:
 | Key         | Value                       |
 | ----------- | --------------------------- |
 | `remaining` | Amount of time until expiry |
+
+#### DNS
+
+```yaml
+type: dns
+config:
+  server: 1.1.1.1
+  port: 53
+  timeout: 60
+  target: my.domain.com
+```
+
+| Key       | Required | Description         |
+| --------- | -------- | ------------------- |
+| `host`    | Yes      | DNS server to query |
+| `port`    | No       |                     |
+| `timeout` | No       |                     |
+| `target`  | Yes      |                     |

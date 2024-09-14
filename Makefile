@@ -6,7 +6,10 @@ GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
 
 DOCKER_BUILD_PLATFORMS ?= linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
-BIN_NAME := neko
+ifeq ($(GOOS), windows)
+BIN_SUFFIX = .exe
+endif
+BIN_NAME := neko$(BIN_SUFFIX)
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 

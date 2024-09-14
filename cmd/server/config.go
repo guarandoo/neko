@@ -194,10 +194,11 @@ type ProbeNotifierConfig struct {
 }
 
 type MonitorConfig struct {
-	Name      string                `yaml:"name"`
-	Interval  string                `yaml:"interval"`
-	Probe     ProbeConfig           `yaml:"probe"`
-	Notifiers []ProbeNotifierConfig `yaml:"notifiers"`
+	Name             string                `yaml:"name"`
+	Interval         string                `yaml:"interval"`
+	Probe            ProbeConfig           `yaml:"probe"`
+	Notifiers        []ProbeNotifierConfig `yaml:"notifiers"`
+	ConsiderAllTests bool                  `yaml:"considerAllTests"`
 }
 
 type Configuration struct {

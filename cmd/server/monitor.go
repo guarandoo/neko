@@ -7,9 +7,10 @@ import (
 )
 
 type Monitor struct {
-	Name      string
-	Interval  string
-	Probe     probe.Probe
-	Status    core.Status
-	Notifiers []notifier.Notifier
+	Name          string
+	Interval      string
+	Probe         probe.Probe
+	Status        core.Status
+	Notifiers     []notifier.Notifier
+	Configuration MonitorConfig
 }

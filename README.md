@@ -108,7 +108,7 @@ Most notifiers offer the ability to customize the message in the notification, f
 | Variable | Description                                   |
 | -------- | --------------------------------------------- |
 | Name     | Name of the probe that triggered the notifier |
-| Reason   | The result of the probe                       |
+| Status   | The result of the probe                       |
 
 #### Discord Webhook
 
@@ -117,7 +117,7 @@ type: discord_webhook
 config:
   url: https://discord.com/api/webhooks/webhook_id/webhook_token
   messageTemplate: |-
-    {{.Name}} is {{.Reason}}
+    {{.Name}} is {{.Status}}
 ```
 
 | Key               | Required | Description                |

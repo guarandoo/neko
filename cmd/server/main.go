@@ -163,7 +163,7 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 			Recipients: v.Recipients,
 		})
 	case DiscordWebhookNotifierConfig:
-		messageTemplate := "{{.Name}}: {{.Reason}}"
+		messageTemplate := "{{.Name}} is now {{.Status}}, was {{.PreviousStatus}} for {{.Duration}}"
 		if v.MessageTemplate != nil {
 			messageTemplate = *v.MessageTemplate
 		}
@@ -187,6 +187,16 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 		err = fmt.Errorf("unknown probe type: %s", nc.Type)
 	}
 	return n, err
+}
+
+func Count[T any](ts []T, pred func(T) bool) int {
+	count := 0
+	for _, t := range ts {
+		if pred(t) {
+			count += 1
+		}
+	}
+	return count
 }
 
 func main() {
@@ -249,11 +259,12 @@ func main() {
 			log.Fatalf("unable to create probe: %s", err)
 		}
 		monitor := Monitor{
-			Name:      m.Name,
-			Interval:  m.Interval,
-			Probe:     p,
-			Notifiers: maps.Values(notifiers),
-			Status:    core.StatusPending,
+			Name:          m.Name,
+			Interval:      m.Interval,
+			Probe:         p,
+			Notifiers:     maps.Values(notifiers),
+			Status:        core.StatusPending,
+			Configuration: m,
 		}
 		monitors = append(monitors, monitor)
 	}
@@ -291,7 +302,19 @@ func main() {
 
 				// calculate new state
 				previousStatus := monitor.Status
-				status := res.Tests[0].Status
+				var status core.Status
+				testCount := len(res.Tests)
+				if testCount == 1 {
+					status = res.Tests[0].Status
+				} else {
+					status = core.StatusDown
+					count := Count(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
+					if monitor.Configuration.ConsiderAllTests && count == testCount {
+						status = core.StatusUp
+					} else if !monitor.Configuration.ConsiderAllTests && count > 0 {
+						status = core.StatusUp
+					}
+				}
 
 				monitor.Status = status
 
@@ -301,10 +324,11 @@ func main() {
 						data := make(map[string]interface{})
 						data["Instance"] = instance
 						data["Name"] = monitor.Name
-						data["Reason"] = fmt.Sprintf("%v", status)
+						data["PreviousStatus"] = fmt.Sprintf("%v", previousStatus)
+						data["Status"] = fmt.Sprintf("%v", status)
 						data["TimeNotify"] = now
 						data["TimeNotifyUnix"] = now.Unix()
-						data["Duration"] = now.Sub(lastTransition)
+						data["Duration"] = now.Sub(lastTransition).Round(time.Second)
 
 						for _, n := range monitor.Notifiers {
 							if err := n.Notify(monitor.Name, data); err != nil {

@@ -15,7 +15,7 @@ type gotifyNotifier struct {
 
 func (n *gotifyNotifier) Notify(name string, data map[string]interface{}) error {
 	body := map[string]interface{}{
-		"message":  fmt.Sprintf("%s: %s", name, data["reason"]),
+		"message":  fmt.Sprintf("%s: %s", name, data["status"]),
 		"priority": 2,
 		"title":    "Monitor Status Change",
 	}

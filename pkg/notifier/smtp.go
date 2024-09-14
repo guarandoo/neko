@@ -20,7 +20,7 @@ func (n *smtpNotifier) Notify(name string, data map[string]interface{}) error {
 	msg += fmt.Sprintf("To: %v\n", strings.Join(n.recipients, ","))
 	msg += fmt.Sprintf("Subject: %v\n", "Monitor Status Change")
 	msg += "\n"
-	msg += fmt.Sprintf("%s: %s", name, data["reason"])
+	msg += fmt.Sprintf("%s: %s", name, data["status"])
 	if err := smtp.SendMail(fmt.Sprintf("%v:%v", n.host, n.port), n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
 		return err
 	}

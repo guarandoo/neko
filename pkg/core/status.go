@@ -5,14 +5,14 @@ import "fmt"
 type Status int
 
 const (
-	StatusUnknown Status = iota
+	StatusPending Status = iota
 	StatusUp
 	StatusDown
 )
 
 func (s Status) String() string {
 	switch s {
-	case StatusUnknown:
+	case StatusPending:
 		return "Unknown"
 	case StatusUp:
 		return "Up"

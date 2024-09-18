@@ -13,9 +13,10 @@ import (
 type RecordType string
 
 const (
-	Host RecordType = "Host"
-	NS   RecordType = "NS"
-	MX   RecordType = "MX"
+	Host  RecordType = "Host"
+	NS    RecordType = "NS"
+	MX    RecordType = "MX"
+	CNAME RecordType = "CNAME"
 )
 
 type dnsProbe struct {
@@ -85,6 +86,16 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 		if len(addrs) == 0 {
 			test.Status = core.StatusDown
 			test.Error = errors.New("no records returned")
+
+			tests = append(tests, test)
+			return &core.Result{Tests: tests}, nil
+		}
+
+	case CNAME:
+		_, err := r.LookupCNAME(context.Background(), p.target)
+		if err != nil {
+			test.Status = core.StatusDown
+			test.Error = err
 
 			tests = append(tests, test)
 			return &core.Result{Tests: tests}, nil

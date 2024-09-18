@@ -74,7 +74,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 
 		if res.StatusCode != 200 {
 			test.Status = core.StatusDown
-			test.Error = errors.New(fmt.Sprintf("return code was %v", res.StatusCode))
+			test.Error = fmt.Errorf("return code was %v", res.StatusCode)
 			tests = append(tests, test)
 			continue
 		}
@@ -98,7 +98,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 		return nil, err
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return nil, errors.New("Unknown url scheme")
+		return nil, errors.New("unknown url scheme")
 	}
 
 	instance := httpProbe{

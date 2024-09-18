@@ -7,7 +7,6 @@ import (
 )
 
 type sqlProbe struct {
-	db *sql.DB
 }
 
 type msSqlProbe struct {

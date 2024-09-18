@@ -35,7 +35,7 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 		pinger.OnFinish = func(stats *probing.Statistics) {
 			if stats.PacketLoss > 0.0 {
 				test.Status = core.StatusDown
-				test.Error = errors.New("Packet loss")
+				test.Error = errors.New("packet loss")
 				tests = append(tests, test)
 			}
 		}

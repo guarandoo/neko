@@ -1,6 +1,6 @@
 apiVersion: v2
 name: neko
-description: blah
+description: An(other) uptime monitor
 type: application
 version: 1.0.0
 appVersion: v0.1.0

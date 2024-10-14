@@ -1,5 +1,7 @@
 name: Go
 on: [push]
+env:
+  DOCKER_HOST: tcp://localhost:2375
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -25,4 +25,4 @@ jobs:
           version: ~> v2
           args: release --clean
         env:
-          GITEA_TOKEN: ${{ env.REGISTRY_TOKEN }}
+          GITEA_TOKEN: ${{ secrets.REGISTRY_PASSWORD }}

@@ -24,7 +24,7 @@ jobs:
         id: metadata
         run: 'echo "Gitea context: ${{ toJson(gitea) }}"'
       - name: Get metadata
-        uses: actions/metadata-action@v3
+        uses: docker/metadata-action@v3
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:

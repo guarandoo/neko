@@ -26,7 +26,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Debug
-        run: 'echo "Gitea context: ${{ toJson(gitea) }}"'
+        run: |
+          echo "Gitea context: ${{ toJson(gitea) }}"
+          echo "meta context: ${{ toJson(steps.meta.outputs) }}"
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:

@@ -5,6 +5,8 @@ on:
       - actions
     tags:
       - "v*"
+env:
+  GITEA_REGISTRY: gitea.calliope.rip
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -16,7 +18,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ gitea.repository }}
+          images: ${{ env.GITEA_REGISTRY }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr

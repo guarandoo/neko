@@ -36,5 +36,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
+          context: .
+          file: ./Dockerfile
+          provenance: false
           push: true
           tags: "gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }},gitea.calliope.rip/${{ gitea.repository }}:latest"

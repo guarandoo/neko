@@ -1,5 +1,10 @@
 name: Go
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
 jobs:
   # build:
   #   runs-on: ubuntu-latest
@@ -18,7 +23,6 @@ jobs:
   #       run: go test ./...
   publish:
     runs-on: ubuntu-latest
-    # needs: build
     env:
       DOCKER_ORG: guarandoo
       DOCKER_LATEST: latest
@@ -38,22 +42,23 @@ jobs:
           registry: gitea.calliope.rip
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      # - name: Build Docker image
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: .
-      #     file: ./Dockerfile
-      #     platforms: |
-      #       linux/amd64
-      #     push: true
-      #     tags: |
-      #       gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
-      #       gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
       - name: Build Docker image
-        run: docker buildx build --load -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} .
-      - name: Tag Docker image
-        run: |
-          docker tag gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: |
+            linux/amd64
+          load: true
+          # push: true
+          tags: |
+            gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
+            gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
+      # - name: Build Docker image
+      #   run: docker buildx build --load -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} .
+      # - name: Tag Docker image
+      #   run: |
+      #     docker tag gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
       - name: Push Docker image
         run: |
             docker push gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}

@@ -3,15 +3,13 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ '1.22.3' ]
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Go ${{ matrix.go-version }}
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
       - name: Install dependencies
         run: go get ./...
       - name: Build

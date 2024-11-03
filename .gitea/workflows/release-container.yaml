@@ -16,7 +16,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: "{{ gitea.repository }}"
+          images: "${{ gitea.repository }}"
           tags: |
             type=ref,event=branch
             type=ref,event=pr

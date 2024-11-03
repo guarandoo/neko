@@ -7,26 +7,8 @@ on:
     tags:
       - "v*"
 jobs:
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Setup Go
-  #       uses: actions/setup-go@v5
-  #       with:
-  #         go-version-file: go.mod
-  #     - name: Install dependencies
-  #       run: go get ./...
-  #     - name: Build
-  #       run: go build -v ./...
-  #     - name: Test
-  #       run: go test ./...
   publish:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_ORG: guarandoo
-      DOCKER_LATEST: latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,17 +27,8 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
-          # load: true
           push: true
           tags: |
             gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
-            gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
-      # - name: Build Docker image
-      #   run: docker buildx build --load -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} .
-      # - name: Tag Docker image
-      #   run: |
-      #     docker tag gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
-      # - name: Push Docker image
-      #   run: |
-      #       docker push gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
-      #       docker push gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
+            gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.tag }}
+            gitea.calliope.rip/${{ gitea.repository }}:latest

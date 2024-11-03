@@ -50,7 +50,7 @@ jobs:
       #       gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
       #       gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
       - name: Build Docker image
-        run: docker build -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} .
+        run: docker buildx build --load -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} .
       - name: Tag Docker image
         run: |
           docker tag gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}

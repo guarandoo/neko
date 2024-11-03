@@ -21,7 +21,10 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Debug
+        id: metadata
         run: 'echo "Gitea context: ${{ toJson(gitea) }}"'
+      - name: Get metadata
+        uses: actions/metadata-action@v3
       - name: Build Docker image
         uses: docker/build-push-action@v4
         with:
@@ -30,6 +33,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
-            gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.tag }}
+            gitea.calliope.rip/${{ gitea.repository }}:${{ steps.metadata.outputs.sha }}
+            gitea.calliope.rip/${{ gitea.repository }}:${{ steps.metadata.outputs.tag }}
             gitea.calliope.rip/${{ gitea.repository }}:latest

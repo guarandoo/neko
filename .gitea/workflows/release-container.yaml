@@ -1,6 +1,8 @@
 name: Go
 on:
   push:
+    branches:
+      - actions
     tags:
       - "v*"
 jobs:
@@ -18,6 +20,8 @@ jobs:
           registry: gitea.calliope.rip
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Debug
+        run: 'echo "Gitea context: ${{ toJson(gitea) }}"'
       - name: Build Docker image
         uses: docker/build-push-action@v4
         with:

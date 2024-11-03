@@ -38,17 +38,22 @@ jobs:
           registry: gitea.calliope.rip
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      # - name: Build Docker image
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     platforms: |
+      #       linux/amd64
+      #     push: true
+      #     tags: |
+      #       gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
+      #       gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
       - name: Build Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: |
-            linux/amd64
-          # push: true
-          tags: |
-            gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
-            gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
+        run: docker build -t gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}
+      - name: Tag Docker image
+        run: |
+          docker tag gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }} gitea.calliope.rip/${{ gitea.repository }}:${{ env.DOCKER_LATEST }}
       - name: Push Docker image
         run: |
             docker push gitea.calliope.rip/${{ gitea.repository }}:${{ gitea.sha }}

@@ -201,8 +201,13 @@ type MonitorConfig struct {
 	ConsiderAllTests bool                  `yaml:"considerAllTests"`
 }
 
+type MetricsConfiguration struct {
+	ListenAddress string `yaml:"listenAddress"`
+}
+
 type Configuration struct {
 	Instance  *string                   `yaml:"instance"`
 	Notifiers map[string]NotifierConfig `yaml:"notifiers"`
 	Monitors  []MonitorConfig           `yaml:"monitors"`
+	Metrics   MetricsConfiguration      `yaml:"metrics"`
 }

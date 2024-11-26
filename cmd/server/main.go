@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -17,6 +19,9 @@ import (
 	"github.com/guarandoo/neko/pkg/probe"
 	"github.com/hashicorp/raft"
 	"github.com/mxmauro/resetevent"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -199,6 +204,13 @@ func Count[T any](ts []T, pred func(T) bool) int {
 	return count
 }
 
+var (
+	metrics_up = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "neko_up",
+		Help: "",
+	}, []string{"instance", "monitor"})
+)
+
 func main() {
 	cfg := "config.yaml"
 	cfgEnv := os.Getenv("NEKO_CONFIG")
@@ -206,13 +218,14 @@ func main() {
 		cfg = cfgEnv
 	}
 
-	quit := make(chan os.Signal, 1)
 	start := resetevent.NewManualResetEvent()
 
 	filename, err := filepath.Abs(cfg)
 	if err != nil {
 		log.Fatalf("unable to get filename: %s", err)
 	}
+
+	log.Printf("loading configuration file from: %s", filename)
 
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		log.Fatalf("config file does not exist: %s", err)
@@ -241,6 +254,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to parse config: %s", err)
 	}
+
+	log.Print("setting up metrics")
+
+	var wg sync.WaitGroup
+
+	// metrics
+	http.Handle("/metrics", promhttp.Handler())
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		http.ListenAndServe(config.Metrics.ListenAddress, nil)
+	}()
+
+	log.Print("setting up notifiers")
 
 	notifiers := map[string]notifier.Notifier{}
 	for k, v := range config.Notifiers {
@@ -317,6 +344,12 @@ func main() {
 				}
 
 				monitor.Status = status
+				gauge := metrics_up.WithLabelValues(instance, monitor.Name)
+				if status == core.StatusUp {
+					gauge.Set(1)
+				} else {
+					gauge.Set(0)
+				}
 
 				if previousStatus != status {
 					now := time.Now()
@@ -358,5 +391,6 @@ func main() {
 
 	log.Println("initialization complete, releasing monitors")
 	start.Set()
-	<-quit
+
+	wg.Wait()
 }

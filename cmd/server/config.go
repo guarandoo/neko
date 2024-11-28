@@ -199,6 +199,7 @@ type MonitorConfig struct {
 	Probe            ProbeConfig           `yaml:"probe"`
 	Notifiers        []ProbeNotifierConfig `yaml:"notifiers"`
 	ConsiderAllTests bool                  `yaml:"considerAllTests"`
+	Invert           bool                  `yaml:"invert"`
 }
 
 type MetricsConfiguration struct {

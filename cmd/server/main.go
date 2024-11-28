@@ -343,6 +343,15 @@ func main() {
 					}
 				}
 
+				if monitor.Configuration.Invert {
+					switch status {
+					case core.StatusUp:
+						status = core.StatusDown
+					case core.StatusDown:
+						status = core.StatusUp
+					}
+				}
+
 				monitor.Status = status
 				gauge := metrics_up.WithLabelValues(instance, monitor.Name)
 				if status == core.StatusUp {

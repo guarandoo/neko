@@ -205,6 +205,14 @@ func Count[T any](ts []T, pred func(T) bool) int {
 }
 
 var (
+	metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "neko_probe_attempts_total",
+		Help: "",
+	}, []string{"instance", "monitor"})
+	metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "neko_probe_attempts_failed",
+		Help: "",
+	}, []string{"instance", "monitor"})
 	metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "neko_up",
 		Help: "",
@@ -320,11 +328,13 @@ func main() {
 			for {
 				<-ticker.C
 				log.Printf("running monitor %v", monitor.Name)
+				metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name).Add(1.0)
 				start := time.Now()
 				res, err := monitor.Probe.Probe()
 				duration := time.Since(start)
 				if err != nil {
 					log.Printf("monitor %v failed: %s", monitor.Name, err)
+					metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name).Add(1.0)
 					continue
 				}
 				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)

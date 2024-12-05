@@ -209,6 +209,10 @@ var (
 		Name: "neko_up",
 		Help: "",
 	}, []string{"instance", "monitor"})
+	metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "neko_scrape_duration_nanoseconds",
+		Help: "",
+	}, []string{"instance", "monitor"})
 )
 
 func main() {
@@ -316,12 +320,16 @@ func main() {
 			for {
 				<-ticker.C
 				log.Printf("running monitor %v", monitor.Name)
+				start := time.Now()
 				res, err := monitor.Probe.Probe()
+				duration := time.Since(start)
 				if err != nil {
 					log.Printf("monitor %v failed: %s", monitor.Name, err)
 					continue
 				}
 				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
+
+				metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name).Observe(float64(duration.Nanoseconds()))
 
 				if len(res.Tests) == 0 {
 					continue

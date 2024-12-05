@@ -205,7 +205,7 @@ func Count[T any](ts []T, pred func(T) bool) int {
 }
 
 var (
-	metrics_up = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "neko_up",
 		Help: "",
 	}, []string{"instance", "monitor"})
@@ -353,7 +353,7 @@ func main() {
 				}
 
 				monitor.Status = status
-				gauge := metrics_up.WithLabelValues(instance, monitor.Name)
+				gauge := metricsUp.WithLabelValues(instance, monitor.Name)
 				if status == core.StatusUp {
 					gauge.Set(1)
 				} else {

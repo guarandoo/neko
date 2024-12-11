@@ -247,9 +247,9 @@ config:
 
 A Prometheus metrics endpoint is available at the address configured via `metrics.listenAddress` and exports the following metrics:
 
-| Metric                      | Description                               |
-| --------------------------- | ----------------------------------------- |
-| up                          | Monitor status (`1` or `0`)               |
-| scrape_duration_nanoseconds | Amount of time it took to execute a probe |
-| neko_probe_attempts_total   | Total number of probe attempts            |
-| neko_probe_attempts_failed  | Number of probe attempts that failed      |
+| Metric                           | Description                               |
+| -------------------------------- | ----------------------------------------- |
+| up                               | Monitor status (`1` or `0`)               |
+| neko_scrape_duration_nanoseconds | Amount of time it took to execute a probe |
+| neko_probe_attempts_total        | Total number of probe attempts            |
+| neko_probe_attempts_failed       | Number of probe attempts that failed      |

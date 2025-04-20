@@ -13,3 +13,6 @@ README.md
 config.yaml
 config.example.yaml
 values.yaml
+
+flake.nix
+flake.lock

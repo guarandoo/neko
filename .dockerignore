@@ -9,10 +9,10 @@ Dockerfile
 .dockerignore
 Makefile
 README.md
+.gitignore
 
-config.yaml
-config.example.yaml
-values.yaml
+config*.yaml
+!config.example.yaml
 
 flake.nix
 flake.lock

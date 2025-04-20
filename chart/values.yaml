@@ -1,7 +1,7 @@
 image:
   registry: gitea.calliope.rip
   repository: guarandoo/neko
-  tag:
+  tag: v0.0.5
   pullPolicy: IfNotPresent
 deployment:
   enabled: true
@@ -21,3 +21,18 @@ updateStrategy:
 nameOverride:
 fullnameOverride:
 config: {}
+# affinity:
+#   podAntiAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       - labelSelector:
+#           matchExpressions:
+#             - key: app.kubernetes.io/name
+#               operator: In
+#               values:
+#                 - neko
+#         topologyKey: topology.kubernetes.io/zone
+extraEnv:
+  - name: NEKO_INSTANCE
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName

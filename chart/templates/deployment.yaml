@@ -14,7 +14,7 @@ metadata:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.deployment.replicas }}
   {{- if .Values.deployment.revisionHistoryLimit }}
   revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
   {{- end }}
@@ -38,7 +38,7 @@ spec:
       containers:
         - name: {{ template "neko.fullname" . }}
           image: {{ template "neko.image-name" . }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 80
@@ -50,7 +50,9 @@ spec:
           env:
             - name: NEKO_CONFIG
               value: /etc/neko/config.yaml
+            {{- toYaml .Values.extraEnv | nindent 12 }}
       volumes:
         - name: config
           configMap:
             name: {{ template "neko.configmapName" . }}
+      affinity: {{- toYaml .Values.affinity | nindent 8 -}}

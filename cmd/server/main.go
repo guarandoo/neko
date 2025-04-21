@@ -208,19 +208,19 @@ var (
 	metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "neko_probe_attempts_total",
 		Help: "",
-	}, []string{"instance", "monitor"})
+	}, []string{"instance", "monitor", "type"})
 	metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "neko_probe_attempts_failed",
 		Help: "",
-	}, []string{"instance", "monitor"})
+	}, []string{"instance", "monitor", "type"})
 	metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "neko_up",
 		Help: "",
-	}, []string{"instance", "monitor"})
+	}, []string{"instance", "monitor", "type"})
 	metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "neko_scrape_duration_nanoseconds",
 		Help: "",
-	}, []string{"instance", "monitor"})
+	}, []string{"instance", "monitor", "type"})
 )
 
 func main() {
@@ -328,18 +328,18 @@ func main() {
 			for {
 				<-ticker.C
 				log.Printf("running monitor %v", monitor.Name)
-				metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name).Add(1.0)
+				metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 				start := time.Now()
 				res, err := monitor.Probe.Probe()
 				duration := time.Since(start)
 				if err != nil {
 					log.Printf("monitor %v failed: %s", monitor.Name, err)
-					metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name).Add(1.0)
+					metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 					continue
 				}
 				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
 
-				metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name).Observe(float64(duration.Nanoseconds()))
+				metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
 
 				if len(res.Tests) == 0 {
 					continue
@@ -371,7 +371,7 @@ func main() {
 				}
 
 				monitor.Status = status
-				gauge := metricsUp.WithLabelValues(instance, monitor.Name)
+				gauge := metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
 				if status == core.StatusUp {
 					gauge.Set(1)
 				} else {

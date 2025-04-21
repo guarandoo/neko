@@ -33,6 +33,15 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 		}
 
 		pinger.OnFinish = func(stats *probing.Statistics) {
+			test.Extras["rtt_avg"] = stats.AvgRtt
+			test.Extras["rtt_max"] = stats.MaxRtt
+			test.Extras["rtt_min"] = stats.MinRtt
+			test.Extras["rtt_stdev"] = stats.StdDevRtt
+			test.Extras["packet_loss"] = stats.PacketLoss
+			test.Extras["packets_received"] = stats.PacketsRecv
+			test.Extras["packets_received_duplicates"] = stats.PacketsRecvDuplicates
+			test.Extras["packets_sent"] = stats.PacketsSent
+
 			if stats.PacketLoss > 0.0 {
 				test.Status = core.StatusDown
 				test.Error = errors.New("packet loss")

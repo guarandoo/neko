@@ -62,6 +62,54 @@ This repository includes a Helm chart for deployment on Kubernetes
 helm install -n neko neko
 ```
 
+### NixOS
+
+This repository provides a Nix flake which can be used with a NixOS system:
+
+```nix
+{
+  description = "My NixOS flake";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/unstable";
+    # ...
+    neko.url = "git+https://git.calliope.rip/guarandoo/neko"; # add flake as input
+  };
+  outputs = {
+    nixpkgs,
+    neko,
+    ...
+  }: {
+    nixosConfigurations = {
+      my-nixos-system = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          # ...
+          neko.nixosModules.default # add module
+        ];
+        config = {
+          # ...
+          services.neko = {
+            enable = true;
+            settings = {
+              instance = "my-neko-instance";
+              notifiers = {
+                # ...
+              };
+              monitors = [
+                # ...
+              ];
+              metrics = {
+                listenAddress = "127.0.0.1:9090";
+              };
+            };
+          };
+        };
+      }
+    };
+  }
+}
+```
+
 ## Configuration
 
 The configuration is loaded from a YAML file named `config.yaml` in the working directory.

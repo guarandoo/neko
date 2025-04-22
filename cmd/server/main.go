@@ -186,7 +186,11 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 			LastMessageId:     messageId,
 		})
 	case GotifyNotifierConfig:
-		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token})
+		titleTemplate := "Monitor Status Change"
+		if v.TitleTemplate != nil {
+			titleTemplate = *v.TitleTemplate
+		}
+		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token, TitleTemplate: titleTemplate})
 	default:
 		n = nil
 		err = fmt.Errorf("unknown probe type: %s", nc.Type)

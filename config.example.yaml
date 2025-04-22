@@ -16,6 +16,12 @@ notifiers:
       sender: neko@example.com
       recipients:
         - john.doe@example.com
+  my_gotify_notifier:
+    type: gotify
+    config:
+      url: https://gotify.example.com
+      token: my-gotify-token
+      # titleTemplate: "Monitor {{.Name}} is now {{.Status}}" # An optional title template
 monitors:
   ssh-monitor:
     interval: 1m

@@ -5,19 +5,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
 type gotifyNotifier struct {
-	url   string
-	token string
+	url           string
+	token         string
+	titleTemplate *template.Template
 }
 
 func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
+	var titleBuf bytes.Buffer
+
 	body := map[string]any{
 		"message":  fmt.Sprintf("%s: %s", name, data["Status"]),
 		"priority": 2,
-		"title":    "Monitor Status Change",
+		"title":    n.titleTemplate.Execute(&titleBuf, data),
 		"extras":   make(map[string]any),
 	}
 
@@ -48,10 +52,18 @@ func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
 }
 
 type GotifyOptions struct {
-	Url   string
-	Token string
+	Url           string
+	Token         string
+	TitleTemplate string
 }
 
 func NewGotifyNotifier(options GotifyOptions) (Notifier, error) {
-	return &gotifyNotifier{url: options.Url, token: options.Token}, nil
+	titleTemplate := template.New("title")
+	titleTemplate.Parse(options.TitleTemplate)
+
+	return &gotifyNotifier{
+		url:           options.Url,
+		token:         options.Token,
+		titleTemplate: titleTemplate,
+	}, nil
 }

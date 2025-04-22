@@ -64,13 +64,13 @@ type GotifyOptions struct {
 }
 
 func NewGotifyNotifier(options GotifyOptions) (Notifier, error) {
-	titleTemplate := template.New("")
-	if _, err := titleTemplate.Parse(options.TitleTemplate); err != nil {
+	titleTemplate, err := template.New("").Parse(options.TitleTemplate)
+	if err != nil {
 		return nil, fmt.Errorf("unable to parse title template: %w", err)
 	}
 
-	messageTemplate := template.New("")
-	if _, err := titleTemplate.Parse(options.MessageTemplate); err != nil {
+	messageTemplate, err := template.New("").Parse(options.MessageTemplate)
+	if err != nil {
 		return nil, fmt.Errorf("unable to parse message template: %w", err)
 	}
 

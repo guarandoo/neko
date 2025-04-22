@@ -32,11 +32,11 @@ type GotifyNotifierConfig struct {
 }
 
 type NotifierConfig struct {
-	Type   string      `yaml:"type"`
-	Config interface{} `yaml:"config"`
+	Type   string `yaml:"type"`
+	Config any    `yaml:"config"`
 }
 
-func (f *NotifierConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (f *NotifierConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	var t struct {
 		Type string `yaml:"type"`
 	}
@@ -115,11 +115,11 @@ type DnsProbeConfig struct {
 }
 
 type ProbeConfig struct {
-	Type   string      `yaml:"type"`
-	Config interface{} `yaml:"config"`
+	Type   string `yaml:"type"`
+	Config any    `yaml:"config"`
 }
 
-func (f *ProbeConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	var t struct {
 		Type string `yaml:"type"`
 	}

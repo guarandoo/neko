@@ -35,7 +35,7 @@ func (p *domainProbe) Probe() (*core.Result, error) {
 
 	remaining := time.Since(expiration).Abs()
 
-	extras := make(map[string]interface{})
+	extras := make(map[string]any)
 	extras["remaining"] = remaining
 
 	test := core.Test{

@@ -10,7 +10,7 @@ type MyFsm struct {
 	a int
 }
 
-func (m *MyFsm) Apply(*raft.Log) interface{} {
+func (m *MyFsm) Apply(*raft.Log) any {
 	return nil
 }
 

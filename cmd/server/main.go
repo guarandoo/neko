@@ -381,7 +381,7 @@ func main() {
 				if previousStatus != status {
 					now := time.Now()
 					if previousStatus != core.StatusPending {
-						data := make(map[string]interface{})
+						data := make(map[string]any)
 						data["Instance"] = instance
 						data["Name"] = monitor.Name
 						data["PreviousStatus"] = fmt.Sprintf("%v", previousStatus)

@@ -22,7 +22,7 @@ type discordWebhookReply struct {
 }
 
 func (n *discordWebhookNotifier) editMessage(messageId string, content string) (*discordWebhookReply, error) {
-	body := map[string]interface{}{
+	body := map[string]any{
 		"content": content,
 	}
 
@@ -61,7 +61,7 @@ func (n *discordWebhookNotifier) editMessage(messageId string, content string) (
 }
 
 func sendMessage(url string, content string) (*discordWebhookReply, error) {
-	body := map[string]interface{}{
+	body := map[string]any{
 		"content": content,
 	}
 
@@ -92,7 +92,7 @@ func sendMessage(url string, content string) (*discordWebhookReply, error) {
 	return &j, nil
 }
 
-func (n *discordWebhookNotifier) Notify(name string, data map[string]interface{}) error {
+func (n *discordWebhookNotifier) Notify(name string, data map[string]any) error {
 	tpl, err := template.New(name).Parse(n.messageTemplate)
 	if err != nil {
 		return err

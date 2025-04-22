@@ -13,12 +13,12 @@ type gotifyNotifier struct {
 	token string
 }
 
-func (n *gotifyNotifier) Notify(name string, data map[string]interface{}) error {
-	body := map[string]interface{}{
+func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
+	body := map[string]any{
 		"message":  fmt.Sprintf("%s: %s", name, data["Status"]),
 		"priority": 2,
 		"title":    "Monitor Status Change",
-		"extras":   make(map[string]interface{}),
+		"extras":   make(map[string]any),
 	}
 
 	payload, err := json.Marshal(body)

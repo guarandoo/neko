@@ -8,5 +8,5 @@ type Test struct {
 	Target string
 	Status Status
 	Error  error
-	Extras map[string]interface{}
+	Extras map[string]any
 }

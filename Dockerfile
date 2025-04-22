@@ -5,7 +5,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN apk update && apk add libcap
+RUN --mount=type=cache,id=apk-${TARGETARCH},sharing=locked,target=/var/cache/apk \
+    apk add --no-cache libcap
 
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -17,7 +18,6 @@ RUN setcap cap_net_raw=+ep neko
 
 FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.19
 WORKDIR /app
-RUN apk update && apk add libcap
 
 COPY --from=builder /app/neko .
 ENTRYPOINT [ "/app/neko" ]

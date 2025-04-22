@@ -39,10 +39,10 @@ func TestHttpProbe(t *testing.T) {
 	}
 }
 
-func TestHttpProbeRedirect(t *testing.T) {
+func testHttpProbeRedirect(t *testing.T, redirectCount int, redirectLimit int) {
 	redirects := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if redirects < 1 {
+		if redirects < redirectCount {
 			http.Redirect(w, r, "/", http.StatusMovedPermanently)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -54,7 +54,7 @@ func TestHttpProbeRedirect(t *testing.T) {
 	probe, err := NewHttpProbe(HttpProbeOptions{
 		Url:          server.URL,
 		Method:       "GET",
-		MaxRedirects: 0,
+		MaxRedirects: redirectLimit,
 		Timeout:      5,
 	})
 	if err != nil {
@@ -71,7 +71,19 @@ func TestHttpProbeRedirect(t *testing.T) {
 	}
 
 	test := res.Tests[0]
-	if test.Status != core.StatusDown {
-		t.Fatal("probe did not report target as down even after redirect limit was exceeded")
+	if redirectCount > redirectLimit {
+		if test.Status != core.StatusDown {
+			t.Fatal("probe did not report target as down even after redirect limit was exceeded")
+		}
+	} else {
+		if test.Status != core.StatusUp {
+			t.Fatal("probe did not report target as up")
+		}
 	}
+}
+
+func TestHttpProbeRedirectLimit(t *testing.T) {
+	testHttpProbeRedirect(t, 1, 0)
+	testHttpProbeRedirect(t, 1, 1)
+	testHttpProbeRedirect(t, 1, 2)
 }

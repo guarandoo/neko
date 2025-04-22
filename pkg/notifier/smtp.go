@@ -16,12 +16,13 @@ type smtpNotifier struct {
 
 func (n *smtpNotifier) Notify(name string, data map[string]any) error {
 	msg := ""
-	msg += fmt.Sprintf("From: %v\n", n.sender)
-	msg += fmt.Sprintf("To: %v\n", strings.Join(n.recipients, ","))
-	msg += fmt.Sprintf("Subject: %v\n", "Monitor Status Change")
-	msg += "\n"
-	msg += fmt.Sprintf("%s: %s", name, data["Status"])
-	if err := smtp.SendMail(fmt.Sprintf("%v:%v", n.host, n.port), n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
+	msg += fmt.Sprintf("From: %v\r\n", n.sender)
+	msg += fmt.Sprintf("To: %v\r\n", strings.Join(n.recipients, ","))
+	msg += fmt.Sprintf("Subject: %v\r\n", "Monitor Status Change")
+	msg += "\r\n"
+	msg += fmt.Sprintf("%s: %s\r\n", name, data["Status"])
+	addr := fmt.Sprintf("%v:%v", n.host, n.port)
+	if err := smtp.SendMail(addr, n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
 		return err
 	}
 	return nil

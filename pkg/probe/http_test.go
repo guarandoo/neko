@@ -10,7 +10,7 @@ import (
 
 func TestHttpProbe(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
@@ -30,7 +30,12 @@ func TestHttpProbe(t *testing.T) {
 	}
 
 	if len(res.Tests) != 1 {
-		t.Fatal("unexpected test count")
+		t.Fatalf("unexpected test count: found %v expecting %v", len(res.Tests), 1)
+	}
+
+	test := res.Tests[0]
+	if test.Status != core.StatusUp {
+		t.Fatal("probe did not report target as up")
 	}
 }
 
@@ -61,8 +66,12 @@ func TestHttpProbeRedirect(t *testing.T) {
 		t.Fatalf("probe failed: %v", err)
 	}
 
+	if len(res.Tests) != 1 {
+		t.Fatalf("unexpected test count: found %v expecting %v", len(res.Tests), 1)
+	}
+
 	test := res.Tests[0]
 	if test.Status != core.StatusDown {
-		t.Fatal("probe did not report down even after redirect limit was exceeded")
+		t.Fatal("probe did not report target as down even after redirect limit was exceeded")
 	}
 }

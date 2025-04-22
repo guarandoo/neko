@@ -12,6 +12,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           force-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run tests
+        run: |
+          go mod tidy
+          go test ./...
       - name: Get metadata
         id: meta
         uses: docker/metadata-action@v5

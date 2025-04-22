@@ -50,13 +50,13 @@ type SmtpNotifierOptions struct {
 }
 
 func NewSmtpNotifier(options SmtpNotifierOptions) (Notifier, error) {
-	subjectTemplate := template.New("")
-	if _, err := subjectTemplate.Parse(options.SubjectTemplate); err != nil {
+	subjectTemplate, err := template.New("").Parse(options.SubjectTemplate)
+	if err != nil {
 		return nil, fmt.Errorf("unable to parse subject template: %w", err)
 	}
 
-	bodyTemplate := template.New("")
-	if _, err := bodyTemplate.Parse(options.BodyTemplate); err != nil {
+	bodyTemplate, err := template.New("").Parse(options.BodyTemplate)
+	if err != nil {
 		return nil, fmt.Errorf("unable to parse body template: %w", err)
 	}
 

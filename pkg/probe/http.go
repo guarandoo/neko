@@ -26,7 +26,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 		return nil, err
 	}
 
-	ips, err := net.LookupIP(p.url.Host)
+	ips, err := net.LookupIP(p.url.Hostname())
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
 	}

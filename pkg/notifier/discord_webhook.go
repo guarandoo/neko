@@ -11,7 +11,7 @@ import (
 
 type discordWebhookNotifier struct {
 	url               string
-	messageTemplate   string
+	messageTemplate   *template.Template
 	lastMessageId     *string
 	persistentMessage bool
 	state             map[string]string
@@ -93,13 +93,8 @@ func sendMessage(url string, content string) (*discordWebhookReply, error) {
 }
 
 func (n *discordWebhookNotifier) Notify(name string, data map[string]any) error {
-	tpl, err := template.New(name).Parse(n.messageTemplate)
-	if err != nil {
-		return err
-	}
-
 	var msgBuf bytes.Buffer
-	if err := tpl.Execute(&msgBuf, data); err != nil {
+	if err := n.messageTemplate.Execute(&msgBuf, data); err != nil {
 		return err
 	}
 
@@ -145,9 +140,14 @@ type DiscordWebhookOptions struct {
 }
 
 func NewDiscordWebhookNotifier(options DiscordWebhookOptions) (Notifier, error) {
+	messageTemplate, err := template.New("").Parse(options.MessageTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse message template: %w", err)
+	}
+
 	return &discordWebhookNotifier{
 		url:               options.Url,
-		messageTemplate:   options.MessageTemplate,
+		messageTemplate:   messageTemplate,
 		lastMessageId:     options.LastMessageId,
 		persistentMessage: options.PersistentMessage,
 		state:             make(map[string]string),

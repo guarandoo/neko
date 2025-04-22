@@ -12,24 +12,21 @@ import (
 type gotifyNotifier struct {
 	url             string
 	token           string
-	titleTemplate   string
-	messageTemplate string
+	titleTemplate   *template.Template
+	messageTemplate *template.Template
 }
 
 func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
-	titleTemplate := template.New("")
-	titleTemplate.Parse(n.titleTemplate)
-
-	messageTemplate := template.New("")
-	messageTemplate.Parse(n.messageTemplate)
-
 	var titleBuf bytes.Buffer
+	n.titleTemplate.Execute(&titleBuf, data)
+
 	var messageBuf bytes.Buffer
+	n.messageTemplate.Execute(&messageBuf, data)
 
 	body := map[string]any{
-		"message":  messageTemplate.Execute(&messageBuf, data),
+		"message":  messageBuf.String(),
 		"priority": 2,
-		"title":    titleTemplate.Execute(&titleBuf, data),
+		"title":    titleBuf.String(),
 		"extras":   make(map[string]any),
 	}
 
@@ -67,10 +64,20 @@ type GotifyOptions struct {
 }
 
 func NewGotifyNotifier(options GotifyOptions) (Notifier, error) {
+	titleTemplate := template.New("")
+	if _, err := titleTemplate.Parse(options.TitleTemplate); err != nil {
+		return nil, fmt.Errorf("unable to parse title template: %w", err)
+	}
+
+	messageTemplate := template.New("")
+	if _, err := titleTemplate.Parse(options.MessageTemplate); err != nil {
+		return nil, fmt.Errorf("unable to parse message template: %w", err)
+	}
+
 	return &gotifyNotifier{
 		url:             options.Url,
 		token:           options.Token,
-		titleTemplate:   options.TitleTemplate,
-		messageTemplate: options.MessageTemplate,
+		titleTemplate:   titleTemplate,
+		messageTemplate: messageTemplate,
 	}, nil
 }

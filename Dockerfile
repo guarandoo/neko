@@ -20,4 +20,4 @@ WORKDIR /app
 RUN apk update && apk add libcap
 
 COPY --from=builder /app/neko .
-CMD /app/neko
+ENTRYPOINT [ "/app/neko" ]

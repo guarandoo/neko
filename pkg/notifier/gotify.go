@@ -10,16 +10,18 @@ import (
 )
 
 type gotifyNotifier struct {
-	url           string
-	token         string
-	titleTemplate *template.Template
+	url             string
+	token           string
+	titleTemplate   *template.Template
+	messageTemplate *template.Template
 }
 
 func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
 	var titleBuf bytes.Buffer
+	var messageBuf bytes.Buffer
 
 	body := map[string]any{
-		"message":  fmt.Sprintf("%s: %s", name, data["Status"]),
+		"message":  n.messageTemplate.Execute(&messageBuf, data),
 		"priority": 2,
 		"title":    n.titleTemplate.Execute(&titleBuf, data),
 		"extras":   make(map[string]any),
@@ -52,18 +54,22 @@ func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
 }
 
 type GotifyOptions struct {
-	Url           string
-	Token         string
-	TitleTemplate string
+	Url             string
+	Token           string
+	TitleTemplate   string
+	MessageTemplate string
 }
 
 func NewGotifyNotifier(options GotifyOptions) (Notifier, error) {
 	titleTemplate := template.New("title")
 	titleTemplate.Parse(options.TitleTemplate)
+	messageTemplate := template.New("message")
+	messageTemplate.Parse(options.MessageTemplate)
 
 	return &gotifyNotifier{
-		url:           options.Url,
-		token:         options.Token,
-		titleTemplate: titleTemplate,
+		url:             options.Url,
+		token:           options.Token,
+		titleTemplate:   titleTemplate,
+		messageTemplate: messageTemplate,
 	}, nil
 }

@@ -27,9 +27,10 @@ type DiscordWebhookNotifierConfig struct {
 }
 
 type GotifyNotifierConfig struct {
-	Url           string  `yaml:"url"`
-	Token         string  `yaml:"token"`
-	TitleTemplate *string `yaml:"titleTemplate"`
+	Url             string  `yaml:"url"`
+	Token           string  `yaml:"token"`
+	TitleTemplate   *string `yaml:"titleTemplate"`
+	MessageTemplate *string `yaml:"messsageTemplate"`
 }
 
 type NotifierConfig struct {

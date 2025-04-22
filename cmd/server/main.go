@@ -190,7 +190,16 @@ func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
 		if v.TitleTemplate != nil {
 			titleTemplate = *v.TitleTemplate
 		}
-		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{Url: v.Url, Token: v.Token, TitleTemplate: titleTemplate})
+		messageTemplate := "{{.Name}}: {{.Status}}"
+		if v.MessageTemplate != nil {
+			messageTemplate = *v.MessageTemplate
+		}
+		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{
+			Url:             v.Url,
+			Token:           v.Token,
+			TitleTemplate:   titleTemplate,
+			MessageTemplate: messageTemplate,
+		})
 	default:
 		n = nil
 		err = fmt.Errorf("unknown probe type: %s", nc.Type)

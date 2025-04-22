@@ -1,4 +1,4 @@
-name: Go
+name: image
 on:
   push:
     branches:

@@ -6,6 +6,14 @@ notifiers:
       # reuseMessage:
       #   enable: true
       #   lastMessageId:
+      # messageTemplate: "{{.Name}}: {{.Status}}" # An optional message template, default: <MONITOR_NAME>: <STATUS>
+  my_gotify_notifier:
+    type: gotify
+    config:
+      url: https://gotify.example.com
+      token: my-gotify-token
+      # titleTemplate: "Monitor {{.Name}} is now {{.Status}}" # An optional title template, default: Monitor Status Change
+      # messageTemplate: "{{.Name}}: {{.Status}}"             # An optional message template, default: <MONITOR_NAME>: <STATUS>
   my_smtp_notifier:
     type: smtp
     config:
@@ -16,13 +24,8 @@ notifiers:
       sender: neko@example.com
       recipients:
         - john.doe@example.com
-  my_gotify_notifier:
-    type: gotify
-    config:
-      url: https://gotify.example.com
-      token: my-gotify-token
-      # titleTemplate: "Monitor {{.Name}} is now {{.Status}}" # An optional title template, default: Monitor Status Change
-      # messageTemplate: "{{.Name}}: {{.Status}}"             # An optional message template, default: <MONITOR_NAME>: <STATUS>
+      # subjectTemplate: "Monitor {{.Name}} is now {{.Status}}" # An optional title template, default: Monitor Status Change
+      # bodyTemplate: "{{.Name}}: {{.Status}}"             # An optional message template, default: <MONITOR_NAME>: <STATUS>
 monitors:
   ssh-monitor:
     interval: 1m

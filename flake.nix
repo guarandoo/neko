@@ -75,6 +75,17 @@
               ExecStart = "${cfg.package}/bin/server";
               AmbientCapabilities = ["CAP_NET_RAW"];
               CapabilityBoundingSet = ["CAP_NET_RAW"];
+              NoNewPrivileges = true;
+              PrivateTmp = true;
+              ProtectHome = true;
+              ProtectControlGroups = true;
+              ProtectKernelModules = true;
+              ProtectKernelTunables = true;
+              ProtectClock = true;
+              LockPersonality = true;
+              MemoryDenyWriteExecute = true;
+              PrivateDevices = true;
+              PrivateUsers = true;
             };
           };
         };

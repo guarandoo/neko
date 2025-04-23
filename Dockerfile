@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o neko ./cmd/server
 RUN setcap cap_net_raw=+ep neko
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.19
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.21
 WORKDIR /app
 
 COPY --from=builder /app/neko .

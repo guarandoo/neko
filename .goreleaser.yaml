@@ -11,6 +11,13 @@ builds:
     id: neko
     dir: .
     main: ./cmd/server
+nfpms:
+  - id: default
+    package_name: neko
+    formats:
+      - deb
+      - rpm
+      - archlinux
 gitea_urls:
   api: https://gitea.calliope.rip/api/v1
   download: https://gitea.calliope.rip

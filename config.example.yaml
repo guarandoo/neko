@@ -1,3 +1,4 @@
+instance: my-neko-instance-1
 notifiers:
   my_discord_notifier:
     type: discord_webhook

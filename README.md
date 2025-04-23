@@ -152,12 +152,17 @@ notifiers:
 
 ### Notifiers
 
-Most notifiers offer the ability to customize the message in the notification, for those that do the following variables are available.
+Most notifiers offer the ability to customize the message in the notification. For those that do, the following variables are available.
 
-| Variable | Description                                   |
-| -------- | --------------------------------------------- |
-| Name     | Name of the probe that triggered the notifier |
-| Status   | The result of the probe                       |
+| Variable       | Description                                     | Data Type     |
+| -------------- | ----------------------------------------------- | ------------- |
+| Instance       | Neko instance name                              | string        |
+| Name           | Name of the probe that triggered the notifier   | string        |
+| PreviousStatus | Status of the probe before transition           | string        |
+| Status         | Current status of the probe                     | string        |
+| TimeNotify     | Time the notifier was triggered                 | time.Time     |
+| TimeNotifyUnix | Time the notifier was triggered (in Unix epoch) | int64         |
+| Duration       | Duration since the last state transition        | time.Duration |
 
 #### Discord Webhook
 

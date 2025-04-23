@@ -13,6 +13,10 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+var (
+	ErrInvalidUrlScheme = errors.New("invalid url scheme")
+)
+
 type httpProbe struct {
 	url          url.URL
 	method       string
@@ -98,7 +102,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 		return nil, err
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return nil, errors.New("unknown url scheme")
+		return nil, ErrInvalidUrlScheme
 	}
 
 	instance := httpProbe{

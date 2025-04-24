@@ -69,7 +69,20 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case ExecProbeConfig:
 		p, err = probe.NewExecProbe(probe.ExecProbeOptions{Name: v.Path, Args: v.Args})
 	case PingProbeConfig:
-		p, err = probe.NewPingProbe(probe.PingProbeOptions{Address: v.Address})
+		count := 1
+		if v.Count != nil {
+			count = *v.Count
+		}
+		packetLossThreshold := 0.0
+		if v.PacketLossThreshold != nil {
+			packetLossThreshold = *v.PacketLossThreshold
+		}
+
+		p, err = probe.NewPingProbe(probe.PingProbeOptions{
+			Address:             v.Address,
+			Count:               count,
+			PacketLossThreshold: packetLossThreshold,
+		})
 	case HttpProbeConfig:
 		maxRedirects := 20
 		if v.MaxRedirects != nil {

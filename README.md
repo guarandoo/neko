@@ -216,11 +216,15 @@ You can combine this with a monitor's `considerAllTests` setting to check if the
 type: ping
 config:
   address: some-machine.example.com
+  # count: 6
+  # packetLossThreshold: 0.5
 ```
 
-| Key       | Required | Description |
-| --------- | -------- | ----------- |
-| `address` | Yes      |             |
+| Key                   | Required | Description                        |
+| --------------------- | -------- | ---------------------------------- |
+| `address`             | Yes      |                                    |
+| `count`               | No       | Number of ICMP packets to send out |
+| `packetLossThreshold` | No       | Packet loss threshold (in percent) |
 
 #### HTTP
 

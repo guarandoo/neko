@@ -11,7 +11,9 @@ import (
 )
 
 type pingProbe struct {
-	address string
+	address             string
+	count               int
+	packetLossThreshold float64
 }
 
 func (p *pingProbe) Probe() (*core.Result, error) {
@@ -46,14 +48,14 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 			test.Extras["packets_received_duplicates"] = stats.PacketsRecvDuplicates
 			test.Extras["packets_sent"] = stats.PacketsSent
 
-			if stats.PacketLoss > 0.0 {
+			if stats.PacketLoss > p.packetLossThreshold {
 				test.Status = core.StatusDown
 				test.Error = errors.New("packet loss")
 				tests = append(tests, test)
 			}
 		}
 
-		pinger.Count = 1
+		pinger.Count = p.count
 		pinger.SetPrivileged(true)
 		err = pinger.Run()
 		if err != nil {
@@ -70,9 +72,15 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 }
 
 type PingProbeOptions struct {
-	Address string
+	Address             string
+	Count               int
+	PacketLossThreshold float64
 }
 
 func NewPingProbe(options PingProbeOptions) (Probe, error) {
-	return &pingProbe{address: options.Address}, nil
+	return &pingProbe{
+		address:             options.Address,
+		count:               options.Count,
+		packetLossThreshold: options.PacketLossThreshold,
+	}, nil
 }

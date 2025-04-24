@@ -87,7 +87,9 @@ type ExecProbeConfig struct {
 }
 
 type PingProbeConfig struct {
-	Address string `yaml:"address"`
+	Address             string   `yaml:"address"`
+	Count               *int     `yaml:"count"`
+	PacketLossThreshold *float64 `yaml:"packetLossThreshold"`
 }
 
 type HttpProbeConfig struct {

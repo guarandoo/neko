@@ -5,3 +5,5 @@ cmd/server/*.exe
 
 config.yaml
 values.yaml
+
+cmd/server/__debug_bin*

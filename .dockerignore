@@ -16,3 +16,5 @@ config*.yaml
 
 flake.nix
 flake.lock
+
+cmd/server/__debug_bin*

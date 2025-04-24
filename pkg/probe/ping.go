@@ -22,7 +22,11 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 
 	tests := []core.Test{}
 	for _, ip := range ips {
-		test := core.Test{Target: ip.String(), Status: core.StatusUp}
+		test := core.Test{
+			Target: ip.String(),
+			Status: core.StatusUp,
+			Extras: make(map[string]any),
+		}
 
 		pinger, err := probing.NewPinger(ip.String())
 		if err != nil {

@@ -306,6 +306,7 @@ func main() {
 
 	monitors := []Monitor{}
 	for _, m := range config.Monitors {
+		log.Printf("setting up monitor %s", m.Name)
 		p, err := createProbe(&m.Probe)
 		if err != nil {
 			log.Fatalf("unable to create probe: %s", err)
@@ -322,7 +323,6 @@ func main() {
 	}
 
 	for _, m := range monitors {
-		log.Printf("setting up monitor %s", m.Name)
 		go func(monitor Monitor) {
 			err := start.Wait(context.Background())
 			if err != nil {

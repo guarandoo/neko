@@ -16,6 +16,9 @@ export DOCKER_CLI_EXPERIMENTAL=enabled
 .PHONY: default
 default: binary
 
+test:
+	go test ./...
+
 binary:
 	CGO_ENABLED=0 go build \
 	  -o ./dist/${GOOS}/${GOARCH}/${BIN_NAME} \

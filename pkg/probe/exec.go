@@ -1,6 +1,7 @@
 package probe
 
 import (
+	"context"
 	"os/exec"
 
 	"github.com/guarandoo/neko/pkg/core"
@@ -11,11 +12,11 @@ type execProbe struct {
 	args []string
 }
 
-func (p *execProbe) Probe() (*core.Result, error) {
+func (p *execProbe) Probe(ctx context.Context) (*core.Result, error) {
 	tests := []core.Test{}
 	test := core.Test{Status: core.StatusUp, Target: p.name}
 
-	cmd := exec.Command(p.name, p.args...)
+	cmd := exec.CommandContext(ctx, p.name, p.args...)
 	err := cmd.Run()
 	if err != nil {
 		test.Status = core.StatusDown
@@ -27,10 +28,14 @@ func (p *execProbe) Probe() (*core.Result, error) {
 }
 
 type ExecProbeOptions struct {
+	ProbeOptions
 	Name string
 	Args []string
 }
 
 func NewExecProbe(options ExecProbeOptions) (Probe, error) {
-	return &execProbe{name: options.Name, args: options.Args}, nil
+	return &execProbe{
+		name: options.Name,
+		args: options.Args,
+	}, nil
 }

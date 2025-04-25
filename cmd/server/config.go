@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/guarandoo/neko/pkg/probe"
 )
@@ -81,112 +82,157 @@ func (f *NotifierConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
-type ExecProbeConfig struct {
+type ProbeTypeConfig struct {
+}
+
+type ExecProbeTypeConfig struct {
+	ProbeTypeConfig
 	Path string   `yaml:"path"`
 	Args []string `yaml:"args"`
 }
 
-type PingProbeConfig struct {
+type PingProbeTypeConfig struct {
+	ProbeTypeConfig
 	Address             string   `yaml:"address"`
 	Count               *int     `yaml:"count"`
 	PacketLossThreshold *float64 `yaml:"packetLossThreshold"`
 }
 
-type HttpProbeConfig struct {
+type HttpProbeTypeConfig struct {
+	ProbeTypeConfig
 	Address      string `yaml:"address"`
 	MaxRedirects *int   `yaml:"maxRedirects"`
-	Timeout      *int   `yaml:"timeout"`
 }
 
-type SshProbeConfig struct {
+type SshProbeTypeConfig struct {
+	ProbeTypeConfig
 	Host    string  `yaml:"host"`
 	Port    *int    `yaml:"port"`
 	HostKey *string `yaml:"hostKey"`
 }
 
-type DomainProbeConfig struct {
+type DomainProbeTypeConfig struct {
+	ProbeTypeConfig
 	Domain    string  `yaml:"domain"`
-	Timeout   *int    `yaml:"timeout"`
 	Threshold *string `yaml:"threshold"`
 }
 
-type DnsProbeConfig struct {
+type DnsProbeTypeConfig struct {
+	ProbeTypeConfig
 	Server     string            `yaml:"server"`
-	Timeout    *int              `yaml:"timeout"`
 	Port       *int              `yaml:"port"`
 	Target     string            `yaml:"target"`
 	RecordType *probe.RecordType `yaml:"recordType"`
 }
 
 type ProbeConfig struct {
-	Type   string `yaml:"type"`
-	Config any    `yaml:"config"`
+	Type    string
+	Timeout *time.Duration
+	Config  any
 }
 
 func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	var t struct {
-		Type string `yaml:"type"`
+		Type    string  `yaml:"type"`
+		Timeout *string `yaml:"timeout"`
 	}
 	err := unmarshal(&t)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to unmarshal config: %w", err)
 	}
 	f.Type = t.Type
+	if t.Timeout == nil {
+		duration, err := time.ParseDuration(*t.Timeout)
+		if err == nil {
+			f.Timeout = &duration
+		}
+	}
+
 	switch t.Type {
 	case "exec":
 		var c struct {
-			Config ExecProbeConfig `yaml:"config"`
+			Config ExecProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout == nil {
+			duration := time.Second * 30
+			f.Timeout = &duration
+		}
+
 	case "ping":
 		var c struct {
-			Config PingProbeConfig `yaml:"config"`
+			Config PingProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout != nil {
+			duration := time.Second * 4
+			f.Timeout = &duration
+		}
+
 	case "http":
 		var c struct {
-			Config HttpProbeConfig `yaml:"config"`
+			Config HttpProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout == nil {
+			duration := time.Second * 60
+			f.Timeout = &duration
+		}
+
 	case "ssh":
 		var c struct {
-			Config SshProbeConfig `yaml:"config"`
+			Config SshProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout == nil {
+			duration := time.Second * 30
+			f.Timeout = &duration
+		}
+
 	case "domain":
 		var c struct {
-			Config DomainProbeConfig `yaml:"config"`
+			Config DomainProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout == nil {
+			duration := time.Second * 30
+			f.Timeout = &duration
+		}
+
 	case "dns":
 		var c struct {
-			Config DnsProbeConfig `yaml:"config"`
+			Config DnsProbeTypeConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
 			return err
 		}
 		f.Config = c.Config
+		if f.Timeout == nil {
+			duration := time.Second * 5
+			f.Timeout = &duration
+		}
+
 	default:
 		return fmt.Errorf("unknown probe type: %s", f.Type)
 	}

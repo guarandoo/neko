@@ -1,9 +1,10 @@
 package probe
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -14,17 +15,36 @@ type sshProbe struct {
 	host            string
 	port            int
 	hostKeyCallback ssh.HostKeyCallback
+	user            string
+	authMethods     []ssh.AuthMethod
 }
 
-func (p *sshProbe) Probe() (*core.Result, error) {
+func connectAndAuthenticate(ctx context.Context, host string, config *ssh.ClientConfig) error {
+	dialer := net.Dialer{}
+	con, err := dialer.DialContext(ctx, "tcp", host)
+	if err != nil {
+		return err
+	}
+	defer con.Close()
+
+	sshCon, _, _, err := ssh.NewClientConn(con, host, config)
+	if err != nil {
+		return err
+	}
+	defer sshCon.Close()
+
+	return nil
+}
+
+func (p *sshProbe) Probe(ctx context.Context) (*core.Result, error) {
 	ips, err := net.LookupIP(p.host)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
 	}
 
 	config := &ssh.ClientConfig{
-		User:            "",
-		Auth:            []ssh.AuthMethod{},
+		User:            p.user,
+		Auth:            p.authMethods,
 		HostKeyCallback: p.hostKeyCallback,
 	}
 
@@ -32,17 +52,13 @@ func (p *sshProbe) Probe() (*core.Result, error) {
 	for _, ip := range ips {
 		test := core.Test{Target: ip.String(), Status: core.StatusUp}
 
-		client, err := ssh.Dial("tcp", fmt.Sprintf("[%v]:%v", ip, p.port), config)
-		if err != nil {
-			if !strings.Contains(err.Error(), "ssh: unable to authenticate") {
-				test.Status = core.StatusDown
-				test.Error = err
-				tests = append(tests, test)
-				continue
-			}
-		}
-		if client != nil {
-			client.Close()
+		host := fmt.Sprintf("[%v]:%v", ip, p.port)
+
+		if err := connectAndAuthenticate(ctx, host, config); err != nil {
+			test.Status = core.StatusDown
+			test.Error = err
+			tests = append(tests, test)
+			continue
 		}
 
 		tests = append(tests, test)
@@ -51,10 +67,25 @@ func (p *sshProbe) Probe() (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+type SshProbePasswordAuthMethodOptions struct {
+	Password string
+}
+
+type SshProbeKeyAuthMethodOptions struct {
+	PrivateKey []byte
+}
+
+type SshProbeAuthOptions struct {
+	User   string
+	Method any
+}
+
 type SshProbeOptions struct {
-	Host    string
-	Port    int
-	HostKey *string
+	ProbeOptions
+	Host           string
+	Port           int
+	HostKey        *string
+	Authentication SshProbeAuthOptions
 }
 
 func NewSshProbe(options SshProbeOptions) (Probe, error) {
@@ -70,9 +101,25 @@ func NewSshProbe(options SshProbeOptions) (Probe, error) {
 		hostKeyCallback = ssh.FixedHostKey(publicKey)
 	}
 
+	var authMethod ssh.AuthMethod
+	if authOpts, ok := options.Authentication.Method.(SshProbePasswordAuthMethodOptions); ok {
+		authMethod = ssh.Password(authOpts.Password)
+	} else if authOpts, ok := options.Authentication.Method.(SshProbeKeyAuthMethodOptions); ok {
+		signer, err := ssh.ParsePrivateKey(authOpts.PrivateKey)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse private key: %w", err)
+		}
+
+		authMethod = ssh.PublicKeys(signer)
+	} else {
+		return nil, errors.New("unknown ssh auth method")
+	}
+
 	return &sshProbe{
 		host:            options.Host,
 		port:            options.Port,
 		hostKeyCallback: hostKeyCallback,
+		user:            options.Authentication.User,
+		authMethods:     []ssh.AuthMethod{authMethod},
 	}, nil
 }

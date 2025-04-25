@@ -1,6 +1,7 @@
 package probe
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/guarandoo/neko/pkg/core"
@@ -25,7 +26,7 @@ func NewPostgresProbe() (Probe, error) {
 	return &postgresProbe{}, nil
 }
 
-func (p *sqlProbe) Probe() (*core.Result, error) {
+func (p *sqlProbe) Probe(ctx context.Context) (*core.Result, error) {
 	con, err := sql.Open("mysql", "")
 	if err != nil {
 		return &core.Result{Tests: []core.Test{}}, nil

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
@@ -22,16 +21,15 @@ const (
 type dnsProbe struct {
 	server     net.IP
 	port       uint16
-	timeout    time.Duration
 	target     string
 	recordType RecordType
 }
 
-func (p *dnsProbe) Probe() (*core.Result, error) {
+func (p *dnsProbe) Probe(ctx context.Context) (*core.Result, error) {
 	r := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
-			d := net.Dialer{Timeout: p.timeout}
+			d := net.Dialer{}
 			return d.DialContext(ctx, network, fmt.Sprintf("%s:%d", p.server, p.port))
 		},
 	}
@@ -42,7 +40,7 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 
 	switch p.recordType {
 	case Host:
-		addrs, err := r.LookupHost(context.Background(), p.target)
+		addrs, err := r.LookupHost(ctx, p.target)
 		if err != nil {
 			test.Status = core.StatusDown
 			test.Error = err
@@ -57,7 +55,7 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 			return &core.Result{Tests: tests}, nil
 		}
 	case NS:
-		addrs, err := r.LookupNS(context.Background(), p.target)
+		addrs, err := r.LookupNS(ctx, p.target)
 		if err != nil {
 			test.Status = core.StatusDown
 			test.Error = err
@@ -74,7 +72,7 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 			return &core.Result{Tests: tests}, nil
 		}
 	case MX:
-		addrs, err := r.LookupMX(context.Background(), p.target)
+		addrs, err := r.LookupMX(ctx, p.target)
 		if err != nil {
 			test.Status = core.StatusDown
 			test.Error = err
@@ -92,7 +90,7 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 		}
 
 	case CNAME:
-		_, err := r.LookupCNAME(context.Background(), p.target)
+		_, err := r.LookupCNAME(ctx, p.target)
 		if err != nil {
 			test.Status = core.StatusDown
 			test.Error = err
@@ -107,9 +105,9 @@ func (p *dnsProbe) Probe() (*core.Result, error) {
 }
 
 type DnsProbeOptions struct {
+	ProbeOptions
 	Server     string
 	Port       uint16
-	Timeout    time.Duration
 	Target     string
 	RecordType RecordType
 }
@@ -123,7 +121,6 @@ func NewDnsProbe(options DnsProbeOptions) (Probe, error) {
 	instance := dnsProbe{
 		server:     server,
 		port:       options.Port,
-		timeout:    options.Timeout,
 		target:     options.Target,
 		recordType: options.RecordType,
 	}

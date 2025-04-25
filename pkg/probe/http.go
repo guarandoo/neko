@@ -18,19 +18,20 @@ var (
 )
 
 type httpProbe struct {
+	timeout      time.Duration
 	url          url.URL
 	method       string
 	maxRedirects int
-	timeout      int
 }
 
-func (p *httpProbe) Probe() (*core.Result, error) {
-	req, err := http.NewRequest(p.method, p.url.String(), nil)
+func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
+	req, err := http.NewRequestWithContext(ctx, p.method, p.url.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	ips, err := net.LookupIP(p.url.Hostname())
+	r := net.Resolver{}
+	ips, err := r.LookupIP(ctx, "ip", p.url.Hostname())
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
 	}
@@ -52,10 +53,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 		}
 		client.Transport = http.DefaultTransport.(*http.Transport).Clone()
 		client.Timeout = time.Duration(p.timeout) * time.Second
-		dialer := &net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}
+		dialer := &net.Dialer{}
 		client.Transport.(*http.Transport).DialContext = func(ctx context.Context, network string, addr string) (net.Conn, error) {
 			parts := strings.Split(addr, ":")
 			if parts[0] == p.url.Host {
@@ -90,10 +88,11 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 }
 
 type HttpProbeOptions struct {
+	ProbeOptions
+	Timeout      time.Duration
 	Url          string
 	Method       string
 	MaxRedirects int
-	Timeout      int
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
@@ -106,10 +105,10 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	}
 
 	instance := httpProbe{
+		timeout:      options.Timeout,
 		url:          *u,
 		method:       options.Method,
 		maxRedirects: options.MaxRedirects,
-		timeout:      options.Timeout,
 	}
 	return &instance, nil
 }

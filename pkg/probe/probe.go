@@ -1,7 +1,14 @@
 package probe
 
-import "github.com/guarandoo/neko/pkg/core"
+import (
+	"context"
+
+	"github.com/guarandoo/neko/pkg/core"
+)
 
 type Probe interface {
-	Probe() (*core.Result, error)
+	Probe(context.Context) (*core.Result, error)
+}
+
+type ProbeOptions struct {
 }

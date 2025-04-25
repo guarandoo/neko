@@ -1,10 +1,12 @@
 package probe
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
@@ -19,13 +21,15 @@ func TestHttpProbe(t *testing.T) {
 		Url:          server.URL,
 		Method:       "GET",
 		MaxRedirects: 0,
-		Timeout:      5,
 	})
 	if err != nil {
 		t.Fatalf("unable to initialize http probe: %v", err)
 	}
 
-	res, err := probe.Probe()
+	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	res, err := probe.Probe(ctx)
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}
@@ -56,7 +60,10 @@ func TestHttpProbeNonOk(t *testing.T) {
 		t.Fatalf("unable to initialize http probe: %v", err)
 	}
 
-	res, err := probe.Probe()
+	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	res, err := probe.Probe(ctx)
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}
@@ -88,12 +95,16 @@ func testHttpProbeRedirect(t *testing.T, redirectCount int, redirectLimit int) {
 		Method:       "GET",
 		MaxRedirects: redirectLimit,
 		Timeout:      5,
+		ProbeOptions: ProbeOptions{},
 	})
 	if err != nil {
 		t.Fatalf("unable to initialize http probe: %v", err)
 	}
 
-	res, err := probe.Probe()
+	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	res, err := probe.Probe(ctx)
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}

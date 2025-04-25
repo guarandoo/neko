@@ -1,9 +1,11 @@
 package probe
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
 	probing "github.com/prometheus-community/pro-bing"
 
@@ -13,10 +15,11 @@ import (
 type pingProbe struct {
 	address             string
 	count               int
+	interval            time.Duration
 	packetLossThreshold float64
 }
 
-func (p *pingProbe) Probe() (*core.Result, error) {
+func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
 	ips, err := net.LookupIP(p.address)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
@@ -38,6 +41,7 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 			continue
 		}
 
+		pinger.Interval = p.interval
 		pinger.OnFinish = func(stats *probing.Statistics) {
 			test.Extras["rtt_avg"] = stats.AvgRtt
 			test.Extras["rtt_max"] = stats.MaxRtt
@@ -51,13 +55,12 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 			if stats.PacketLoss > p.packetLossThreshold {
 				test.Status = core.StatusDown
 				test.Error = errors.New("packet loss")
-				tests = append(tests, test)
 			}
 		}
 
 		pinger.Count = p.count
 		pinger.SetPrivileged(true)
-		err = pinger.Run()
+		err = pinger.RunWithContext(ctx)
 		if err != nil {
 			test.Status = core.StatusDown
 			test.Error = err
@@ -72,8 +75,10 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 }
 
 type PingProbeOptions struct {
+	ProbeOptions
 	Address             string
 	Count               int
+	Interval            time.Duration
 	PacketLossThreshold float64
 }
 
@@ -81,6 +86,7 @@ func NewPingProbe(options PingProbeOptions) (Probe, error) {
 	return &pingProbe{
 		address:             options.Address,
 		count:               options.Count,
+		interval:            options.Interval,
 		packetLossThreshold: options.PacketLossThreshold,
 	}, nil
 }

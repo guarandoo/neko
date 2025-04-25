@@ -1,7 +1,9 @@
 package probe
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -11,15 +13,27 @@ import (
 
 type domainProbe struct {
 	domain    string
-	timeout   int
 	client    *rdap.Client
 	threshold time.Duration
 }
 
-func (p *domainProbe) Probe() (*core.Result, error) {
-	info, err := p.client.QueryDomain(p.domain)
+func (p *domainProbe) Probe(ctx context.Context) (*core.Result, error) {
+	reqRaw := rdap.Request{
+		Type:  rdap.DomainRequest,
+		Query: p.domain,
+	}
+	req := reqRaw.WithContext(ctx)
+	res, err := p.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to query: %w", err)
+	}
+	if resErr, ok := res.Object.(*rdap.Error); ok {
+		return nil, fmt.Errorf("error response received: %v", resErr)
+	}
+
+	info, ok := res.Object.(*rdap.Domain)
+	if !ok {
+		return nil, errors.New("response returned unexpected type")
 	}
 
 	index := slices.IndexFunc(info.Events, func(e rdap.Event) bool { return e.Action == "expiration" })
@@ -56,8 +70,8 @@ func (p *domainProbe) Probe() (*core.Result, error) {
 }
 
 type DomainProbeOptions struct {
+	ProbeOptions
 	Domain    string
-	Timeout   int
 	Threshold time.Duration
 }
 
@@ -65,7 +79,6 @@ func NewDomainProbe(options DomainProbeOptions) (Probe, error) {
 	client := &rdap.Client{}
 	instance := domainProbe{
 		domain:    options.Domain,
-		timeout:   options.Timeout,
 		client:    client,
 		threshold: options.Threshold,
 	}

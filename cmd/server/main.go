@@ -16,7 +16,6 @@ import (
 
 	"github.com/guarandoo/neko/pkg/core"
 	"github.com/guarandoo/neko/pkg/notifier"
-	"github.com/guarandoo/neko/pkg/probe"
 	"github.com/hashicorp/raft"
 	"github.com/mxmauro/resetevent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -62,164 +61,6 @@ func CreateRaft() error {
 	return nil
 }
 
-func createProbe(pc *ProbeConfig) (probe.Probe, error) {
-	var p probe.Probe
-	var err error
-	switch v := pc.Config.(type) {
-	case ExecProbeConfig:
-		p, err = probe.NewExecProbe(probe.ExecProbeOptions{Name: v.Path, Args: v.Args})
-	case PingProbeConfig:
-		count := 1
-		if v.Count != nil {
-			count = *v.Count
-		}
-		packetLossThreshold := 0.0
-		if v.PacketLossThreshold != nil {
-			packetLossThreshold = *v.PacketLossThreshold
-		}
-
-		p, err = probe.NewPingProbe(probe.PingProbeOptions{
-			Address:             v.Address,
-			Count:               count,
-			PacketLossThreshold: packetLossThreshold,
-		})
-	case HttpProbeConfig:
-		maxRedirects := 20
-		if v.MaxRedirects != nil {
-			if *v.MaxRedirects < 0 {
-				return nil, errors.New("MaxRedirects must be a positive number")
-			}
-			maxRedirects = *v.MaxRedirects
-		}
-		timeout := 10
-		if v.Timeout != nil {
-			if *v.Timeout < 0 {
-				return nil, errors.New("timeout must be a positive number")
-			}
-			timeout = *v.Timeout
-		}
-		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
-			Url:          v.Address,
-			MaxRedirects: maxRedirects,
-			Timeout:      timeout,
-		})
-	case SshProbeConfig:
-		port := 22
-		if v.Port != nil {
-			port = *v.Port
-		}
-		p, err = probe.NewSshProbe(probe.SshProbeOptions{
-			Host:    v.Host,
-			Port:    port,
-			HostKey: v.HostKey,
-		})
-	case DomainProbeConfig:
-		timeout := 60
-		if v.Timeout != nil {
-			timeout = *v.Timeout
-		}
-
-		threshold := time.Duration(1)
-		if v.Threshold != nil {
-			threshold, err = time.ParseDuration(*v.Threshold)
-			if err != nil {
-				return nil, err
-			}
-		}
-		p, err = probe.NewDomainProbe(probe.DomainProbeOptions{
-			Domain:    v.Domain,
-			Timeout:   timeout,
-			Threshold: threshold,
-		})
-	case DnsProbeConfig:
-		timeout := 60
-		if v.Timeout != nil {
-			timeout = *v.Timeout
-			if timeout < 0 {
-				return nil, errors.New("invalid timeout")
-			}
-		}
-
-		port := 53
-		if v.Port != nil {
-			port = *v.Port
-			if !(port > 0 && port <= 65535) {
-				return nil, errors.New("invalid port")
-			}
-		}
-
-		recordType := probe.Host
-		if v.RecordType != nil {
-			recordType = *v.RecordType
-		}
-
-		p, err = probe.NewDnsProbe(probe.DnsProbeOptions{
-			Server:     v.Server,
-			Port:       uint16(port),
-			Timeout:    time.Duration(timeout),
-			Target:     v.Target,
-			RecordType: recordType,
-		})
-	default:
-		p = nil
-		err = fmt.Errorf("unknown probe type: %s", pc.Type)
-	}
-	return p, err
-}
-
-func createNotifier(nc *NotifierConfig) (notifier.Notifier, error) {
-	var n notifier.Notifier
-	var err error
-	switch v := nc.Config.(type) {
-	case SmtpNotifierCOnfig:
-		n, err = notifier.NewSmtpNotifier(notifier.SmtpNotifierOptions{
-			Host:       v.Host,
-			Port:       v.Port,
-			Username:   v.Username,
-			Password:   v.Password,
-			Sender:     v.Sender,
-			Recipients: v.Recipients,
-		})
-	case DiscordWebhookNotifierConfig:
-		messageTemplate := "{{.Name}} is now {{.Status}}, was {{.PreviousStatus}} for {{.Duration}}"
-		if v.MessageTemplate != nil {
-			messageTemplate = *v.MessageTemplate
-		}
-		reuseMessage := false
-		var messageId *string = nil
-		if v.ReuseMessage != nil {
-			reuseMessage = v.ReuseMessage.Enable
-			messageId = v.ReuseMessage.MessageId
-		}
-
-		n, err = notifier.NewDiscordWebhookNotifier(notifier.DiscordWebhookOptions{
-			Url:               v.Url,
-			MessageTemplate:   messageTemplate,
-			PersistentMessage: reuseMessage,
-			LastMessageId:     messageId,
-		})
-	case GotifyNotifierConfig:
-		titleTemplate := "Monitor Status Change"
-		if v.TitleTemplate != nil {
-			titleTemplate = *v.TitleTemplate
-		}
-		messageTemplate := "{{.Name}}: {{.Status}}"
-		if v.MessageTemplate != nil {
-			messageTemplate = *v.MessageTemplate
-		}
-		n, err = notifier.NewGotifyNotifier(notifier.GotifyOptions{
-			Url:             v.Url,
-			Token:           v.Token,
-			TitleTemplate:   titleTemplate,
-			MessageTemplate: messageTemplate,
-		})
-	default:
-		n = nil
-		err = fmt.Errorf("unknown probe type: %s", nc.Type)
-	}
-	return n, err
-}
-
 func Count[T any](ts []T, pred func(T) bool) int {
 	count := 0
 	for _, t := range ts {
@@ -248,6 +89,84 @@ var (
 		Help: "",
 	}, []string{"instance", "monitor", "type"})
 )
+
+func runMonitor(config Configuration, monitor *Monitor, lastTransition *time.Time, instance string) error {
+	metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+	start := time.Now()
+
+	ctx, cancel := context.WithTimeout(context.Background(), *monitor.Configuration.Probe.Timeout)
+	defer cancel()
+
+	res, err := monitor.Probe.Probe(ctx)
+	duration := time.Since(start)
+	if err != nil {
+		metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
+	}
+	log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
+
+	metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
+
+	if len(res.Tests) == 0 {
+		return nil
+	}
+
+	// calculate new state
+	previousStatus := monitor.Status
+	var status core.Status
+	testCount := len(res.Tests)
+	if testCount == 1 {
+		status = res.Tests[0].Status
+	} else {
+		status = core.StatusDown
+		count := Count(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
+		if monitor.Configuration.ConsiderAllTests && count == testCount {
+			status = core.StatusUp
+		} else if !monitor.Configuration.ConsiderAllTests && count > 0 {
+			status = core.StatusUp
+		}
+	}
+
+	if monitor.Configuration.Invert {
+		switch status {
+		case core.StatusUp:
+			status = core.StatusDown
+		case core.StatusDown:
+			status = core.StatusUp
+		}
+	}
+
+	monitor.Status = status
+	gauge := metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
+	if status == core.StatusUp {
+		gauge.Set(1)
+	} else {
+		gauge.Set(0)
+	}
+
+	if previousStatus != status {
+		now := time.Now()
+		if previousStatus != core.StatusPending {
+			data := make(map[string]any)
+			data["Instance"] = instance
+			data["Name"] = monitor.Name
+			data["PreviousStatus"] = fmt.Sprintf("%v", previousStatus)
+			data["Status"] = fmt.Sprintf("%v", status)
+			data["TimeNotify"] = now
+			data["TimeNotifyUnix"] = now.Unix()
+			data["Duration"] = now.Sub(*lastTransition).Round(time.Second)
+
+			for _, n := range monitor.Notifiers {
+				if err := n.Notify(monitor.Name, data); err != nil {
+					log.Printf("unable to notify: %s", err)
+				}
+			}
+		}
+		*lastTransition = now
+	}
+
+	return nil
+}
 
 func main() {
 	cfg := "config.yaml"
@@ -354,75 +273,8 @@ func main() {
 			for {
 				<-ticker.C
 				log.Printf("running monitor %v", monitor.Name)
-				metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
-				start := time.Now()
-				res, err := monitor.Probe.Probe()
-				duration := time.Since(start)
-				if err != nil {
-					log.Printf("monitor %v failed: %s", monitor.Name, err)
-					metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+				if err := runMonitor(config, &monitor, &lastTransition, instance); err != nil {
 					continue
-				}
-				log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
-
-				metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
-
-				if len(res.Tests) == 0 {
-					continue
-				}
-
-				// calculate new state
-				previousStatus := monitor.Status
-				var status core.Status
-				testCount := len(res.Tests)
-				if testCount == 1 {
-					status = res.Tests[0].Status
-				} else {
-					status = core.StatusDown
-					count := Count(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
-					if monitor.Configuration.ConsiderAllTests && count == testCount {
-						status = core.StatusUp
-					} else if !monitor.Configuration.ConsiderAllTests && count > 0 {
-						status = core.StatusUp
-					}
-				}
-
-				if monitor.Configuration.Invert {
-					switch status {
-					case core.StatusUp:
-						status = core.StatusDown
-					case core.StatusDown:
-						status = core.StatusUp
-					}
-				}
-
-				monitor.Status = status
-				gauge := metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
-				if status == core.StatusUp {
-					gauge.Set(1)
-				} else {
-					gauge.Set(0)
-				}
-
-				if previousStatus != status {
-					now := time.Now()
-					if previousStatus != core.StatusPending {
-						data := make(map[string]any)
-						data["Instance"] = instance
-						data["Name"] = monitor.Name
-						data["PreviousStatus"] = fmt.Sprintf("%v", previousStatus)
-						data["Status"] = fmt.Sprintf("%v", status)
-						data["TimeNotify"] = now
-						data["TimeNotifyUnix"] = now.Unix()
-						data["Duration"] = now.Sub(lastTransition).Round(time.Second)
-
-						for _, n := range monitor.Notifiers {
-							if err := n.Notify(monitor.Name, data); err != nil {
-								log.Printf("unable to notify: %s", err)
-							}
-						}
-					}
-					lastTransition = now
 				}
 			}
 		}(m)

@@ -100,8 +100,10 @@ type PingProbeTypeConfig struct {
 
 type HttpProbeTypeConfig struct {
 	ProbeTypeConfig
-	Address      string `yaml:"address"`
-	MaxRedirects *int   `yaml:"maxRedirects"`
+	Address            string             `yaml:"address"`
+	MaxRedirects       *int               `yaml:"maxRedirects"`
+	SuccessStatusCodes *[]int             `yaml:"successStatusCodes"`
+	Headers            *map[string]string `yaml:"headers"`
 }
 
 type SshProbeTypeConfig struct {

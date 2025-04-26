@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,16 +19,22 @@ var (
 )
 
 type httpProbe struct {
-	timeout      time.Duration
-	url          url.URL
-	method       string
-	maxRedirects int
+	timeout            time.Duration
+	url                url.URL
+	method             string
+	maxRedirects       int
+	successStatusCodes []int
+	headers            map[string]string
 }
 
 func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
 	req, err := http.NewRequestWithContext(ctx, p.method, p.url.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	for key, value := range p.headers {
+		req.Header.Add(key, value)
 	}
 
 	r := net.Resolver{}
@@ -74,7 +81,7 @@ func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
 			continue
 		}
 
-		if res.StatusCode != 200 {
+		if !slices.Contains(p.successStatusCodes, res.StatusCode) {
 			test.Status = core.StatusDown
 			test.Error = fmt.Errorf("return code was %v", res.StatusCode)
 			tests = append(tests, test)
@@ -89,10 +96,12 @@ func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
 
 type HttpProbeOptions struct {
 	ProbeOptions
-	Timeout      time.Duration
-	Url          string
-	Method       string
-	MaxRedirects int
+	Timeout            time.Duration
+	Url                string
+	Method             string
+	MaxRedirects       int
+	SuccessStatusCodes []int
+	Headers            map[string]string
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
@@ -105,10 +114,12 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	}
 
 	instance := httpProbe{
-		timeout:      options.Timeout,
-		url:          *u,
-		method:       options.Method,
-		maxRedirects: options.MaxRedirects,
+		timeout:            options.Timeout,
+		url:                *u,
+		method:             options.Method,
+		maxRedirects:       options.MaxRedirects,
+		successStatusCodes: options.SuccessStatusCodes,
+		headers:            options.Headers,
 	}
 	return &instance, nil
 }

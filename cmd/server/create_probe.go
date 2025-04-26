@@ -58,12 +58,24 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			}
 			maxRedirects = *v.MaxRedirects
 		}
+
+		successStatusCodes := []int{200}
+		if v.SuccessStatusCodes != nil {
+			successStatusCodes = *v.SuccessStatusCodes
+		}
+
+		headers := make(map[string]string)
+		if v.Headers != nil {
+			headers = *v.Headers
+		}
 		// endregion
 
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
-			ProbeOptions: probe.ProbeOptions{},
-			Url:          v.Address,
-			MaxRedirects: maxRedirects,
+			ProbeOptions:       probe.ProbeOptions{},
+			Url:                v.Address,
+			MaxRedirects:       maxRedirects,
+			SuccessStatusCodes: successStatusCodes,
+			Headers:            headers,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

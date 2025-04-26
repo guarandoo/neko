@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,16 +19,22 @@ var (
 )
 
 type httpProbe struct {
-	url          url.URL
-	method       string
-	maxRedirects int
-	timeout      int
+	url                url.URL
+	method             string
+	maxRedirects       int
+	timeout            int
+	successStatusCodes []int
+	headers            map[string]string
 }
 
 func (p *httpProbe) Probe() (*core.Result, error) {
 	req, err := http.NewRequest(p.method, p.url.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	for key, value := range p.headers {
+		req.Header.Add(key, value)
 	}
 
 	ips, err := net.LookupIP(p.url.Hostname())
@@ -76,7 +83,7 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 			continue
 		}
 
-		if res.StatusCode != 200 {
+		if !slices.Contains(p.successStatusCodes, res.StatusCode) {
 			test.Status = core.StatusDown
 			test.Error = fmt.Errorf("return code was %v", res.StatusCode)
 			tests = append(tests, test)
@@ -90,10 +97,12 @@ func (p *httpProbe) Probe() (*core.Result, error) {
 }
 
 type HttpProbeOptions struct {
-	Url          string
-	Method       string
-	MaxRedirects int
-	Timeout      int
+	Url                string
+	Method             string
+	MaxRedirects       int
+	Timeout            int
+	SuccessStatusCodes []int
+	Headers            map[string]string
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
@@ -106,10 +115,12 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	}
 
 	instance := httpProbe{
-		url:          *u,
-		method:       options.Method,
-		maxRedirects: options.MaxRedirects,
-		timeout:      options.Timeout,
+		url:                *u,
+		method:             options.Method,
+		maxRedirects:       options.MaxRedirects,
+		timeout:            options.Timeout,
+		successStatusCodes: options.SuccessStatusCodes,
+		headers:            options.Headers,
 	}
 	return &instance, nil
 }

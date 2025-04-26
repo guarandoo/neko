@@ -93,9 +93,10 @@ type PingProbeConfig struct {
 }
 
 type HttpProbeConfig struct {
-	Address      string `yaml:"address"`
-	MaxRedirects *int   `yaml:"maxRedirects"`
-	Timeout      *int   `yaml:"timeout"`
+	Address            string             `yaml:"address"`
+	MaxRedirects       *int               `yaml:"maxRedirects"`
+	SuccessStatusCodes *[]int             `yaml:"successStatusCodes"`
+	Headers            *map[string]string `yaml:"headers"`
 }
 
 type SshProbeConfig struct {

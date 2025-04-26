@@ -16,10 +16,11 @@ func TestHttpProbe(t *testing.T) {
 	defer server.Close()
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
-		Url:          server.URL,
-		Method:       "GET",
-		MaxRedirects: 0,
-		Timeout:      5,
+		Url:                server.URL,
+		Method:             "GET",
+		MaxRedirects:       0,
+		SuccessStatusCodes: []int{200},
+		Headers:            map[string]string{},
 	})
 	if err != nil {
 		t.Fatalf("unable to initialize http probe: %v", err)
@@ -47,10 +48,12 @@ func TestHttpProbeNonOk(t *testing.T) {
 	defer server.Close()
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
-		Url:          server.URL,
-		Method:       "GET",
-		MaxRedirects: 0,
-		Timeout:      5,
+		Url:                server.URL,
+		Method:             "GET",
+		MaxRedirects:       0,
+		Timeout:            5,
+		SuccessStatusCodes: []int{200},
+		Headers:            map[string]string{},
 	})
 	if err != nil {
 		t.Fatalf("unable to initialize http probe: %v", err)
@@ -84,10 +87,12 @@ func testHttpProbeRedirect(t *testing.T, redirectCount int, redirectLimit int) {
 	defer server.Close()
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
-		Url:          server.URL,
-		Method:       "GET",
-		MaxRedirects: redirectLimit,
-		Timeout:      5,
+		Url:                server.URL,
+		Method:             "GET",
+		MaxRedirects:       redirectLimit,
+		Timeout:            5,
+		SuccessStatusCodes: []int{200},
+		Headers:            map[string]string{},
 	})
 	if err != nil {
 		t.Fatalf("unable to initialize http probe: %v", err)
@@ -129,5 +134,58 @@ func TestHttpProbeInitialize(t *testing.T) {
 	}
 	if !errors.Is(err, ErrInvalidUrlScheme) {
 		t.Fatal("NewHttpProbe returned an unexpected error")
+	}
+}
+
+func TestHttpProbeHeader(t *testing.T) {
+	headers := map[string]string{
+		"X-TestHeader1": "TestHeaderValue1",
+		"X-TestHeader2": "TestHeaderValue2",
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for key, val := range headers {
+			header, ok := r.Header[key]
+			if !ok {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if len(header) != 1 {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			headerValue := header[0]
+			if headerValue != val {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	probe, err := NewHttpProbe(HttpProbeOptions{
+		Timeout:            5,
+		Url:                server.URL,
+		Method:             "GET",
+		MaxRedirects:       0,
+		SuccessStatusCodes: []int{200},
+		Headers:            headers,
+	})
+	if err != nil {
+		t.Fatalf("unable to initialize http probe: %v", err)
+	}
+
+	res, err := probe.Probe()
+	if err != nil {
+		t.Fatalf("probe failed: %v", err)
+	}
+
+	if len(res.Tests) != 1 {
+		t.Fatalf("unexpected test count: found %v expecting %v", len(res.Tests), 1)
+	}
+
+	test := res.Tests[0]
+	if test.Status != core.StatusDown {
+		t.Fatal("probe did not report target as down")
 	}
 }

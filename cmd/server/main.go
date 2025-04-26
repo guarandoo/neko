@@ -91,17 +91,9 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			}
 			maxRedirects = *v.MaxRedirects
 		}
-		timeout := 10
-		if v.Timeout != nil {
-			if *v.Timeout < 0 {
-				return nil, errors.New("timeout must be a positive number")
-			}
-			timeout = *v.Timeout
-		}
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
 			Url:          v.Address,
 			MaxRedirects: maxRedirects,
-			Timeout:      timeout,
 		})
 	case SshProbeConfig:
 		port := 22

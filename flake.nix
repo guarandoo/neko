@@ -40,7 +40,7 @@
           ...
         }:
         let
-          inherit (lib) mkIf;
+          inherit (lib) mkIf mkDefault;
 
           cfg = config.services.neko;
           settingsFormat = pkgs.formats.yaml { };

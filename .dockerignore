@@ -13,8 +13,11 @@ README.md
 
 config*.yaml
 !config.example.yaml
+values.yaml
 
 flake.nix
 flake.lock
 
 cmd/server/__debug_bin*
+
+result

@@ -21,7 +21,7 @@
           version = "0.0.4";
           src = pkgs.lib.cleanSource self;
 
-          vendorHash = "sha256-Qlc3nAAvkq/XaWaBHO9cXVOQPYoB4230ViINVZYQwZU=";
+          vendorHash = "sha256-kFDFhK5q4pfxHOnqRQ+JsAqcffAoE2q6IfktPqHpNO4=";
 
           subPackages = ["cmd/server"];
         };

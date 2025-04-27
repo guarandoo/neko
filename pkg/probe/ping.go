@@ -56,7 +56,7 @@ func (p *pingProbe) Probe() (*core.Result, error) {
 		}
 
 		pinger.Count = p.count
-		pinger.SetPrivileged(true)
+		pinger.SetPrivileged(false)
 		err = pinger.Run()
 		if err != nil {
 			test.Status = core.StatusDown

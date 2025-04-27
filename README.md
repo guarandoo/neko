@@ -1,5 +1,7 @@
 # Neko
 
+![Release status badege](https://git.calliope.rip/guarandoo/neko/actions/workflows/release.yaml/badge.svg)
+
 An(other) uptime monitor.
 
 ## Table of Contents

@@ -91,11 +91,22 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			}
 			maxRedirects = *v.MaxRedirects
 		}
+
+		successStatusCodes := []int{200}
+		if v.SuccessStatusCodes != nil {
+			successStatusCodes = *v.SuccessStatusCodes
+		}
+
+		headers := make(map[string]string)
+		if v.Headers != nil {
+			headers = *v.Headers
+		}
+
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
 			Url:                v.Address,
 			MaxRedirects:       maxRedirects,
-			SuccessStatusCodes: *v.SuccessStatusCodes,
-			Headers:            *v.Headers,
+			SuccessStatusCodes: successStatusCodes,
+			Headers:            headers,
 		})
 	case SshProbeConfig:
 		port := 22

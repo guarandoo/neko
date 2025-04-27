@@ -263,11 +263,56 @@ func main() {
 
 	text, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("unable to read config file: %s", err)
+		log.Fatalf("unable to read config file: %v", err)
 	}
 
 	var config Configuration
 	err = yaml.Unmarshal(text, &config)
+	if err != nil {
+		log.Fatalf("unable to unmarshal config text: %v", err)
+	}
+
+	if config.IncludeNotifiers != nil {
+		f, err := filepath.Abs(*config.IncludeNotifiers)
+		if err != nil {
+			log.Fatalf("unable to get filename: %s", err)
+		}
+		if _, err := os.Stat(f); errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("config file does not exist: %s", err)
+		}
+		t, err := os.ReadFile(f)
+		if err != nil {
+			log.Fatalf("unable to read config file: %s", err)
+		}
+		var c map[string]NotifierConfig
+		err = yaml.Unmarshal(t, &c)
+		if err != nil {
+			log.Fatalf("unable to unmarshal config text: %v", err)
+		}
+		for k, v := range c {
+			config.Notifiers[k] = v
+		}
+	}
+
+	if config.IncludeMonitors != nil {
+		f, err := filepath.Abs(*config.IncludeMonitors)
+		if err != nil {
+			log.Fatalf("unable to get filename: %s", err)
+		}
+		if _, err := os.Stat(f); errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("config file does not exist: %s", err)
+		}
+		t, err := os.ReadFile(f)
+		if err != nil {
+			log.Fatalf("unable to read config file: %s", err)
+		}
+		var c []MonitorConfig
+		err = yaml.Unmarshal(t, &c)
+		if err != nil {
+			log.Fatalf("unable to unmarshal config text: %v", err)
+		}
+		config.Monitors = append(config.Monitors, c...)
+	}
 
 	instance := ""
 	if hostname, err := os.Hostname(); err == nil {

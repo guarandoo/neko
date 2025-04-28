@@ -44,6 +44,9 @@ func TestSsh(t *testing.T) {
 
 	user := "ssh_test"
 	privateKey, err := generateKeyPair()
+	if err != nil {
+		t.Fatalf("unable to generate key pair: %v", err)
+	}
 
 	server := sshTest.Server{
 		Addr: fmt.Sprintf("%v:%v", tcpAddr.IP, tcpAddr.Port),
@@ -65,8 +68,8 @@ func TestSsh(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		err = server.Serve(listener)
-		if !errors.Is(err, sshTest.ErrServerClosed) {
+
+		if err := server.Serve(listener); err != nil && !errors.Is(err, sshTest.ErrServerClosed) {
 			t.Fatalf("unable to start ssh server: %v", err)
 		}
 	}()
@@ -109,5 +112,93 @@ func TestSsh(t *testing.T) {
 	test := res.Tests[0]
 	if test.Status != core.StatusUp {
 		t.Fatalf("probe did not report target as up")
+	}
+}
+
+func TestSshAuthFail(t *testing.T) {
+	var wg sync.WaitGroup
+
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("unable to initiate ssh listener: %v", err)
+	}
+	defer listener.Close()
+
+	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("unable to get listener address")
+	}
+
+	user := "ssh_test"
+	privateKey, err := generateKeyPair()
+	if err != nil {
+		t.Fatalf("unable to generate key pair: %v", err)
+	}
+
+	server := sshTest.Server{
+		Addr: fmt.Sprintf("%v:%v", tcpAddr.IP, tcpAddr.Port),
+		Handler: func(s sshTest.Session) {
+			io.WriteString(s, "Test!")
+		},
+		PublicKeyHandler: func(ctx sshTest.Context, pubkey sshTest.PublicKey) bool {
+			expectedPublicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+			if err != nil {
+				t.Fatalf("unable to extract public key from private key: %v", err)
+			}
+
+			return ctx.User() == user &&
+				expectedPublicKey.Type() == pubkey.Type() &&
+				string(expectedPublicKey.Marshal()) == string(pubkey.Marshal())
+		},
+	}
+
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+
+		if err := server.Serve(listener); err != nil && !errors.Is(err, sshTest.ErrServerClosed) {
+			t.Fatalf("unable to start ssh server: %v", err)
+		}
+	}()
+
+	testPrivKey, err := generateKeyPair()
+	testPrivDer := x509.MarshalPKCS1PrivateKey(testPrivKey)
+	testPrivPem := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: testPrivDer,
+	})
+
+	probe, err := NewSshProbe(SshProbeOptions{
+		Host: tcpAddr.IP.String(),
+		Port: tcpAddr.Port,
+		Authentication: SshProbeAuthOptions{
+			User:   user,
+			Method: SshProbeKeyAuthMethodOptions{PrivateKey: testPrivPem},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unable to create ssh probe: %v", err)
+	}
+
+	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	res, err := probe.Probe(ctx)
+	if err := server.Shutdown(ctx); err != nil {
+		t.Fatalf("unable to shutdown ssh server: %v", err)
+	}
+	wg.Wait()
+
+	if err != nil {
+		t.Fatalf("probe returned an error: %v", err)
+	}
+
+	if len(res.Tests) != 1 {
+		t.Fatalf("returned unexpected number of tests")
+	}
+
+	test := res.Tests[0]
+	if test.Status != core.StatusDown {
+		t.Fatalf("probe did not report target as down")
 	}
 }

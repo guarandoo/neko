@@ -17,6 +17,7 @@ type pingProbe struct {
 	count               int
 	interval            time.Duration
 	packetLossThreshold float64
+	privileged          bool
 }
 
 func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
@@ -59,7 +60,7 @@ func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
 		}
 
 		pinger.Count = p.count
-		pinger.SetPrivileged(false)
+		pinger.SetPrivileged(p.privileged)
 		err = pinger.RunWithContext(ctx)
 		if err != nil {
 			test.Status = core.StatusDown
@@ -80,6 +81,7 @@ type PingProbeOptions struct {
 	Count               int
 	Interval            time.Duration
 	PacketLossThreshold float64
+	Privileged          bool
 }
 
 func NewPingProbe(options PingProbeOptions) (Probe, error) {
@@ -88,5 +90,6 @@ func NewPingProbe(options PingProbeOptions) (Probe, error) {
 		count:               options.Count,
 		interval:            options.Interval,
 		packetLossThreshold: options.PacketLossThreshold,
+		privileged:          options.Privileged,
 	}, nil
 }

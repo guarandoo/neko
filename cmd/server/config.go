@@ -96,6 +96,7 @@ type PingProbeTypeConfig struct {
 	Address             string   `yaml:"address"`
 	Count               *int     `yaml:"count"`
 	PacketLossThreshold *float64 `yaml:"packetLossThreshold"`
+	Privileged          *bool    `yaml:"privileged"`
 }
 
 type HttpProbeTypeConfig struct {

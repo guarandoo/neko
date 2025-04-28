@@ -37,6 +37,11 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		if v.PacketLossThreshold != nil {
 			packetLossThreshold = *v.PacketLossThreshold
 		}
+
+		privileged := false
+		if v.Privileged != nil {
+			privileged = *v.Privileged
+		}
 		// #endregion
 
 		p, err = probe.NewPingProbe(probe.PingProbeOptions{
@@ -44,6 +49,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			Address:             v.Address,
 			Count:               count,
 			PacketLossThreshold: packetLossThreshold,
+			Privileged:          privileged,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

@@ -28,7 +28,7 @@ notifiers:
       # subjectTemplate: "Monitor {{.Name}} is now {{.Status}}" # An optional title template, default: Monitor Status Change
       # bodyTemplate: "{{.Name}}: {{.Status}}"             # An optional message template, default: <MONITOR_NAME>: <STATUS>
 monitors:
-  ssh-monitor:
+  - name: ssh-monitor
     interval: 1m
     probe:
       type: ssh
@@ -37,7 +37,7 @@ monitors:
     notifiers:
       - my_discord_notifier
       - my_smtp_notifier
-  ping-monitor:
+  - name: ping-monitor
     interval: 1m
     probe:
       type: ping
@@ -46,7 +46,7 @@ monitors:
     notifiers:
       - my_discord_notifier
       - my_smtp_notifier
-  http-monitor:
+  - name: http-monitor
     interval: 1m
     probe:
       type: http
@@ -56,7 +56,7 @@ monitors:
     notifiers:
       - my_discord_notifier
       - my_smtp_notifier
-  domain-monitor:
+  - name: domain-monitor
     interval: 1d
     probe:
       type: domain
@@ -65,7 +65,7 @@ monitors:
     notifiers:
       - my_discord_notifier
       - my_smtp_notifier
-  inverted-ping-monitor:
+  - name: inverted-ping-monitor
     interval: 1m
     invert: true
     probe:

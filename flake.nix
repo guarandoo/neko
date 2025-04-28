@@ -6,98 +6,121 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-  }: let
-  in
+  outputs =
     {
-      overlay = _: prev: let
-        pkgs = nixpkgs.legacyPackages.${prev.system};
-      in {
-        neko = pkgs.buildGoModule {
-          pname = "neko";
-          version = "0.0.4";
-          src = pkgs.lib.cleanSource self;
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    let
+    in
+    {
+      overlay =
+        _: prev:
+        let
+          pkgs = nixpkgs.legacyPackages.${prev.system};
+        in
+        {
+          neko = pkgs.buildGoModule {
+            pname = "neko";
+            version = "0.0.4";
+            src = pkgs.lib.cleanSource self;
 
-          vendorHash = "sha256-Qlc3nAAvkq/XaWaBHO9cXVOQPYoB4230ViINVZYQwZU=";
+            vendorHash = "sha256-kFDFhK5q4pfxHOnqRQ+JsAqcffAoE2q6IfktPqHpNO4=";
 
-          subPackages = ["cmd/server"];
+            subPackages = [ "cmd/server" ];
+          };
         };
-      };
 
-      nixosModules.default = {
-        pkgs,
-        lib,
-        config,
-        ...
-      }: let
-        inherit (lib) mkIf;
+      nixosModules.default =
+        {
+          pkgs,
+          lib,
+          config,
+          ...
+        }:
+        let
+          inherit (lib) mkIf mkDefault;
 
-        cfg = config.services.neko;
-        settingsFormat = pkgs.formats.yaml {};
-        configFile = settingsFormat.generate "config.yaml" cfg.settings;
-      in {
-        options = {
-          services.neko = {
-            enable = lib.mkEnableOption "";
-            package = lib.mkOption {
-              type = lib.types.package;
-              default = pkgs.neko;
-              description = "";
-            };
-            settings = lib.mkOption {
-              type = settingsFormat.type;
-              default = {
-                listenAddress = "127.0.0.1:8300";
-                handlers = [];
+          cfg = config.services.neko;
+          settingsFormat = pkgs.formats.yaml { };
+          configFile = settingsFormat.generate "config.yaml" cfg.settings;
+        in
+        {
+          options = {
+            services.neko = {
+              enable = lib.mkEnableOption "";
+              package = lib.mkOption {
+                type = lib.types.package;
+                default = pkgs.neko;
+                description = "";
               };
-              description = ''
-              '';
+              settings = lib.mkOption {
+                type = settingsFormat.type;
+                default = {
+                  listenAddress = "127.0.0.1:8300";
+                  handlers = [ ];
+                };
+                description = '''';
+              };
+            };
+          };
+          config = mkIf cfg.enable {
+            nixpkgs.overlays = [ self.overlay ];
+            systemd.services.neko = {
+              wantedBy = [ "multi-user.target" ];
+              after = [ "network.target" ];
+              description = "";
+
+              environment = {
+                NEKO_CONFIG = configFile;
+              };
+
+              serviceConfig = {
+                ExecStart = "${cfg.package}/bin/server";
+                PrivateTmp = mkDefault true;
+                WorkingDirectory = mkDefault /tmp;
+                DynamicUser = true;
+                User = "neko";
+                Group = "neko";
+                CapabilityBoundingSet = mkDefault [ "" ];
+                DeviceAllow = [ "" ];
+                LockPersonality = true;
+                MemoryDenyWriteExecute = true;
+                NoNewPrivileges = true;
+                PrivateDevices = mkDefault true;
+                ProtectClock = mkDefault true;
+                ProtectControlGroups = true;
+                ProtectHome = true;
+                ProtectHostname = true;
+                ProtectKernelLogs = true;
+                ProtectKernelModules = true;
+                ProtectKernelTunables = true;
+                ProtectSystem = mkDefault "strict";
+                RemoveIPC = true;
+                RestrictAddressFamilies = [
+                  "AF_INET"
+                  "AF_INET6"
+                ];
+                RestrictNamespaces = true;
+                RestrictRealtime = true;
+                RestrictSUIDSGID = true;
+                SystemCallArchitectures = "native";
+                UMask = "0077";
+              };
             };
           };
         };
-        config = mkIf cfg.enable {
-          nixpkgs.overlays = [self.overlay];
-          systemd.services.neko = {
-            wantedBy = ["multi-user.target"];
-            after = ["network.target"];
-            description = "";
-
-            environment = {
-              NEKO_CONFIG = configFile;
-            };
-
-            serviceConfig = {
-              Restart = "always";
-              DynamicUser = "yes";
-              ExecStart = "${cfg.package}/bin/server";
-              AmbientCapabilities = ["CAP_NET_RAW"];
-              CapabilityBoundingSet = ["CAP_NET_RAW"];
-              NoNewPrivileges = true;
-              PrivateTmp = true;
-              ProtectHome = true;
-              ProtectControlGroups = true;
-              ProtectKernelModules = true;
-              ProtectKernelTunables = true;
-              ProtectClock = true;
-              LockPersonality = true;
-              MemoryDenyWriteExecute = true;
-              PrivateDevices = true;
-              PrivateUsers = true;
-            };
-          };
-        };
-      };
     }
     // flake-utils.lib.eachDefaultSystem (
-      system: let
+      system:
+      let
         pkgs = import nixpkgs {
-          overlays = [self.overlay];
+          overlays = [ self.overlay ];
           inherit system;
         };
-      in rec {
+      in
+      rec {
         packages = with pkgs; {
           inherit neko;
           default = neko;

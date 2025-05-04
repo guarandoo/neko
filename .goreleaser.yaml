@@ -18,6 +18,7 @@ nfpms:
       - deb
       - rpm
       - archlinux
+      - apk
 gitea_urls:
   api: https://gitea.calliope.rip/api/v1
   download: https://gitea.calliope.rip

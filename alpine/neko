@@ -1,0 +1,7 @@
+#!/sbin/openrc-run
+
+command="/usr/bin/neko"
+command_args=""
+pidfile="/run/${RC_SVCNAME}.pid"
+name="Neko"
+description="An(other) uptime monitor"

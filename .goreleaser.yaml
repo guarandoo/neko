@@ -19,6 +19,11 @@ nfpms:
       - rpm
       - archlinux
       - apk
+    contents:
+      - src: config.example.yaml
+        dst: /etc/neko/config.yaml
+      - src: alpine/neko
+        dst: /etc/init.d/neko
 gitea_urls:
   api: https://gitea.calliope.rip/api/v1
   download: https://gitea.calliope.rip

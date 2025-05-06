@@ -22,8 +22,10 @@ nfpms:
     contents:
       - src: config.example.yaml
         dst: /etc/neko/config.yaml
+        type: config
       - src: alpine/neko
         dst: /etc/init.d/neko
+        packager: apk
 gitea_urls:
   api: https://gitea.calliope.rip/api/v1
   download: https://gitea.calliope.rip

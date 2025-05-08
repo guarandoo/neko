@@ -27,13 +27,13 @@ nfpms:
         dst: /etc/neko/config.yaml
         type: config|noreplace
       - src: package/systemd/neko.service
-        dst: /usr/share/systemd/system/neko.service
+        dst: /usr/lib/systemd/system/neko.service
         packager: deb
       - src: package/systemd/neko.service
-        dst: /usr/share/systemd/system/neko.service
+        dst: /usr/lib/systemd/system/neko.service
         packager: rpm
       - src: package/systemd/neko.service
-        dst: /usr/share/systemd/system/neko.service
+        dst: /usr/lib/systemd/system/neko.service
         packager: archlinux
       - src: package/openrc/neko
         dst: /etc/init.d/neko

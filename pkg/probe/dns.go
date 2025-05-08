@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
@@ -104,6 +105,12 @@ func (p *dnsProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitDnsProbe sync.Once
+
+func initDnsProbe() {
+
+}
+
 type DnsProbeOptions struct {
 	ProbeOptions
 	Server     string
@@ -113,6 +120,8 @@ type DnsProbeOptions struct {
 }
 
 func NewDnsProbe(options DnsProbeOptions) (Probe, error) {
+	onceInitDnsProbe.Do(initDnsProbe)
+
 	server := net.ParseIP(options.Server)
 	if server == nil {
 		return nil, fmt.Errorf("unable to parse DNS server address")

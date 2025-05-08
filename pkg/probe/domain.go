@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/guarandoo/neko/pkg/core"
@@ -69,6 +70,12 @@ func (p *domainProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitDomainProbe sync.Once
+
+func initDomainProbe() {
+
+}
+
 type DomainProbeOptions struct {
 	ProbeOptions
 	Domain    string
@@ -76,6 +83,8 @@ type DomainProbeOptions struct {
 }
 
 func NewDomainProbe(options DomainProbeOptions) (Probe, error) {
+	onceInitDomainProbe.Do(initDomainProbe)
+
 	client := &rdap.Client{}
 	instance := domainProbe{
 		domain:    options.Domain,

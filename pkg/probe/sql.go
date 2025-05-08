@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
@@ -44,6 +45,12 @@ func (p *sqlProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitSqlProbe sync.Once
+
+func initSqlProbe() {
+
+}
+
 type SqlProbeOptions struct {
 	ProbeOptions
 	Driver string
@@ -52,6 +59,8 @@ type SqlProbeOptions struct {
 }
 
 func NewSqlProbe(options SqlProbeOptions) (Probe, error) {
+	onceInitSqlProbe.Do(initSqlProbe)
+
 	return &sqlProbe{
 		driver: options.Driver,
 		dsn:    options.DSN,

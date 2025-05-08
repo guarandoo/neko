@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	probing "github.com/prometheus-community/pro-bing"
@@ -75,6 +76,12 @@ func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitPingProbe sync.Once
+
+func initPingProbe() {
+
+}
+
 type PingProbeOptions struct {
 	ProbeOptions
 	Address             string
@@ -85,6 +92,8 @@ type PingProbeOptions struct {
 }
 
 func NewPingProbe(options PingProbeOptions) (Probe, error) {
+	onceInitPingProbe.Do(initPingProbe)
+
 	return &pingProbe{
 		address:             options.Address,
 		count:               options.Count,

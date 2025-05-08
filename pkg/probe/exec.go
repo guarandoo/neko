@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"os/exec"
+	"sync"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
@@ -27,6 +28,12 @@ func (p *execProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitExecProbe sync.Once
+
+func initExecProbe() {
+
+}
+
 type ExecProbeOptions struct {
 	ProbeOptions
 	Name string
@@ -34,6 +41,8 @@ type ExecProbeOptions struct {
 }
 
 func NewExecProbe(options ExecProbeOptions) (Probe, error) {
+	onceInitExecProbe.Do(initExecProbe)
+
 	return &execProbe{
 		name: options.Name,
 		args: options.Args,

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/guarandoo/neko/pkg/core"
@@ -94,6 +95,12 @@ func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
 	return &core.Result{Tests: tests}, nil
 }
 
+var onceInitHttpProbe sync.Once
+
+func initHttpProbe() {
+
+}
+
 type HttpProbeOptions struct {
 	ProbeOptions
 	Timeout            time.Duration
@@ -105,6 +112,8 @@ type HttpProbeOptions struct {
 }
 
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
+	onceInitHttpProbe.Do(initHttpProbe)
+
 	u, err := url.ParseRequestURI(options.Url)
 	if err != nil {
 		return nil, err

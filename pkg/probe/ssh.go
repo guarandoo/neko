@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 
 	"golang.org/x/crypto/ssh"
 
@@ -88,7 +89,15 @@ type SshProbeOptions struct {
 	Authentication SshProbeAuthOptions
 }
 
+var onceInitSshProbe sync.Once
+
+func initSshProbe() {
+
+}
+
 func NewSshProbe(options SshProbeOptions) (Probe, error) {
+	onceInitSshProbe.Do(initSshProbe)
+
 	var hostKeyCallback ssh.HostKeyCallback
 
 	if options.HostKey == nil {

@@ -90,7 +90,7 @@ var (
 	}, []string{"instance", "monitor", "type"})
 )
 
-func runMonitor(config Configuration, monitor *Monitor, lastTransition *time.Time, instance string) error {
+func runMonitor(config *Configuration, monitor *Monitor, lastTransition *time.Time, instance string) error {
 	metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 	start := time.Now()
 
@@ -168,35 +168,58 @@ func runMonitor(config Configuration, monitor *Monitor, lastTransition *time.Tim
 	return nil
 }
 
-func main() {
-	cfg := "config.yaml"
-	cfgEnv := os.Getenv("NEKO_CONFIG")
-	if len(cfgEnv) != 0 {
-		cfg = cfgEnv
-	}
-
-	start := resetevent.NewManualResetEvent()
-
-	filename, err := filepath.Abs(cfg)
+func loadConfiguration(path string) (*Configuration, error) {
+	filename, err := filepath.Abs(path)
 	if err != nil {
-		log.Fatalf("unable to get filename: %s", err)
+		return nil, fmt.Errorf("unable to get filename: %s", err)
 	}
 
 	log.Printf("loading configuration file from: %s", filename)
 
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("config file does not exist: %s", err)
+		return nil, fmt.Errorf("config file does not exist: %s", err)
 	}
 
 	text, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("unable to read config file: %v", err)
+		return nil, fmt.Errorf("unable to read config file: %v", err)
 	}
 
 	var config Configuration
 	err = yaml.Unmarshal(text, &config)
 	if err != nil {
-		log.Fatalf("unable to unmarshal config text: %v", err)
+		return nil, fmt.Errorf("unable to unmarshal config text: %v", err)
+	}
+
+	return &config, nil
+}
+
+func main() {
+	start := resetevent.NewManualResetEvent()
+
+	cfgPaths := []string{}
+
+	cfgEnv := os.Getenv("NEKO_CONFIG")
+	if len(cfgEnv) != 0 {
+		cfgPaths = append(cfgPaths, cfgEnv)
+	}
+	cfgPaths = append(cfgPaths, "config.yaml")
+	cfgPaths = append(cfgPaths, "/etc/neko/config.yaml")
+
+	var config *Configuration
+	var err error
+	for _, cfgPath := range cfgPaths {
+		config, err = loadConfiguration(cfgPath)
+		if err != nil {
+			log.Printf("unable to load configuration from %v: %v", cfgPath, err)
+		} else {
+			log.Printf("successfully loaded configuration from: %v", cfgPath)
+			break
+		}
+	}
+
+	if config == nil {
+		log.Fatalf("unable to load configuration")
 	}
 
 	if config.IncludeNotifiers != nil {

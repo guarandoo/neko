@@ -14,6 +14,9 @@ builds:
 nfpms:
   - id: default
     package_name: neko
+    maintainer: John Mark Gabriel Caguicla <jmg.caguicla@guarandoo.me>
+    description: An(other) uptime monitor
+    homepage: https://git.calliope.rip/calliope/neko
     formats:
       - deb
       - rpm
@@ -22,8 +25,17 @@ nfpms:
     contents:
       - src: config.example.yaml
         dst: /etc/neko/config.yaml
-        type: config
-      - src: alpine/neko
+        type: config|noreplace
+      - src: package/systemd/neko.service
+        dst: /usr/lib/systemd/system/neko.service
+        packager: deb
+      - src: package/systemd/neko.service
+        dst: /usr/lib/systemd/system/neko.service
+        packager: rpm
+      - src: package/systemd/neko.service
+        dst: /usr/lib/systemd/system/neko.service
+        packager: archlinux
+      - src: package/openrc/neko
         dst: /etc/init.d/neko
         packager: apk
 gitea_urls:

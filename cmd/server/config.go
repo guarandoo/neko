@@ -175,7 +175,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			return err
 		}
 		f.Config = c.Config
-		if f.Timeout != nil {
+		if f.Timeout == nil {
 			duration := time.Second * 4
 			f.Timeout = &duration
 		}

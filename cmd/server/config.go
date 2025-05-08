@@ -261,9 +261,9 @@ type MetricsConfiguration struct {
 
 type Configuration struct {
 	Instance         *string                   `yaml:"instance"`
+	Metrics          MetricsConfiguration      `yaml:"metrics"`
 	Notifiers        map[string]NotifierConfig `yaml:"notifiers"`
 	IncludeNotifiers *string                   `yaml:"includeNotifiers"`
 	Monitors         []MonitorConfig           `yaml:"monitors"`
 	IncludeMonitors  *string                   `yaml:"includeMonitors"`
-	Metrics          MetricsConfiguration      `yaml:"metrics"`
 }

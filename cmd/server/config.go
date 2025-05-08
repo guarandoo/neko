@@ -97,6 +97,7 @@ type PingProbeTypeConfig struct {
 	Count               *int     `yaml:"count"`
 	PacketLossThreshold *float64 `yaml:"packetLossThreshold"`
 	Privileged          *bool    `yaml:"privileged"`
+	Interval            *string  `yaml:"interval"`
 }
 
 type HttpProbeTypeConfig struct {

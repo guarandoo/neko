@@ -42,6 +42,14 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		if v.Privileged != nil {
 			privileged = *v.Privileged
 		}
+
+		interval := time.Second * 1
+		if v.Interval != nil {
+			interval, err = time.ParseDuration(*v.Interval)
+			if err != nil {
+				return nil, err
+			}
+		}
 		// #endregion
 
 		p, err = probe.NewPingProbe(probe.PingProbeOptions{
@@ -50,6 +58,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			Count:               count,
 			PacketLossThreshold: packetLossThreshold,
 			Privileged:          privileged,
+			Interval:            interval,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)
@@ -107,15 +116,15 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 
 	case DomainProbeTypeConfig:
 		// #region defaults
-		// endregion
-
-		threshold := time.Duration(1)
+		threshold := time.Hour * 24
 		if v.Threshold != nil {
 			threshold, err = time.ParseDuration(*v.Threshold)
 			if err != nil {
 				return nil, err
 			}
 		}
+		// endregion
+
 		p, err = probe.NewDomainProbe(probe.DomainProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},
 			Domain:       v.Domain,
@@ -127,8 +136,6 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 
 	case DnsProbeTypeConfig:
 		// #region defaults
-		// endregion
-
 		port := 53
 		if v.Port != nil {
 			port = *v.Port
@@ -141,6 +148,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		if v.RecordType != nil {
 			recordType = *v.RecordType
 		}
+		// endregion
 
 		p, err = probe.NewDnsProbe(probe.DnsProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},

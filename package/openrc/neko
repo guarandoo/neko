@@ -21,6 +21,6 @@ depend() {
 }
 
 start_pre() {
-    checkpath --directory -owner $command_user:$command_user --mode 0755 \
+    checkpath --directory --owner $command_user:$command_user --mode 0755 \
         /var/log/$RC_SVCNAME
 }

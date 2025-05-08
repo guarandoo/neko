@@ -144,7 +144,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 		return fmt.Errorf("unable to unmarshal config: %w", err)
 	}
 	f.Type = t.Type
-	if t.Timeout == nil {
+	if t.Timeout != nil {
 		duration, err := time.ParseDuration(*t.Timeout)
 		if err == nil {
 			f.Timeout = &duration

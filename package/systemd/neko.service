@@ -1,0 +1,11 @@
+[Unit]
+Description=An(other) uptime monitor.
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/neko
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

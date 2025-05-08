@@ -161,7 +161,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		p, err = probe.NewDnsProbe(probe.DnsProbeOptions{
 			Server:     v.Server,
 			Port:       uint16(port),
-			Timeout:    time.Duration(timeout),
+			Timeout:    time.Duration(timeout) * time.Second,
 			Target:     v.Target,
 			RecordType: recordType,
 		})

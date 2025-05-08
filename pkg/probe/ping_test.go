@@ -15,6 +15,7 @@ func TestPingProbe(t *testing.T) {
 		PacketLossThreshold: 0.0,
 		Interval:            time.Second * 1,
 		ProbeOptions:        ProbeOptions{},
+		Privileged:          true,
 	})
 	if err != nil {
 		t.Errorf("NewPingProbe failed: %v", err)
@@ -34,7 +35,7 @@ func TestPingProbe(t *testing.T) {
 
 	test := res.Tests[0]
 	if test.Status != core.StatusUp {
-		t.Error("probe returned unexpected status")
+		t.Errorf("probe returned unexpected status, found: %v expecting %v", test.Status, core.StatusUp)
 	}
 }
 
@@ -94,6 +95,6 @@ func TestPingProbeTimeout(t *testing.T) {
 
 	test := res.Tests[0]
 	if test.Status != core.StatusDown {
-		t.Error("probe returned unexpected status")
+		t.Errorf("probe returned unexpected status, found: %v expecting %v", test.Status, core.StatusDown)
 	}
 }

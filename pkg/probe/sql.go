@@ -3,36 +3,58 @@ package probe
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/guarandoo/neko/pkg/core"
 )
 
 type sqlProbe struct {
-}
-
-type msSqlProbe struct {
-	sqlProbe
-}
-
-func NewMsSqlProbe() (Probe, error) {
-	return &msSqlProbe{}, nil
-}
-
-type postgresProbe struct {
-	sqlProbe
-}
-
-func NewPostgresProbe() (Probe, error) {
-	return &postgresProbe{}, nil
+	driver string
+	dsn    string
+	query  string
 }
 
 func (p *sqlProbe) Probe(ctx context.Context) (*core.Result, error) {
-	con, err := sql.Open("mysql", "")
+	tests := []core.Test{}
+	test := core.Test{
+		Target: "",
+		Status: core.StatusUp,
+		Error:  nil,
+		Extras: make(map[string]any),
+	}
+
+	con, err := sql.Open(p.driver, p.dsn)
 	if err != nil {
 		return &core.Result{Tests: []core.Test{}}, nil
 	}
-
 	defer con.Close()
 
-	return &core.Result{Tests: []core.Test{}}, nil
+	res := con.QueryRowContext(ctx, p.query)
+	var val *int
+	if err := res.Scan(&val); err != nil {
+		return nil, fmt.Errorf("unable to perform query: %w", err)
+	}
+
+	if val == nil || *val == 0 {
+		test.Status = core.StatusDown
+	}
+
+	tests = append(tests, test)
+
+	return &core.Result{Tests: tests}, nil
+}
+
+type SqlProbeOptions struct {
+	ProbeOptions
+	Driver string
+	DSN    string
+	Query  string
+}
+
+func NewSqlProbe(options SqlProbeOptions) (Probe, error) {
+	return &sqlProbe{
+		driver: options.Driver,
+		dsn:    options.DSN,
+		query:  options.Query,
+	}, nil
 }

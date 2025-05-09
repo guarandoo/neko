@@ -233,14 +233,22 @@ config:
 ```yaml
 type: http
 config:
-  address: https://example.com
+  address: https://example.com/livez
   maxRedirects: 1
+```
+
+```yaml
+type: http
+config:
+  address: https://unix/livez
+  socketPath: /run/myapp/myapp.sock
 ```
 
 | Key            | Required | Description                         |
 | -------------- | -------- | ----------------------------------- |
 | `address`      | Yes      |                                     |
 | `maxRedirects` | No       | Maximum number of allowed redirects |
+| `socketPath`   | No       | Path to UNIX socket                 |
 
 #### SSH
 

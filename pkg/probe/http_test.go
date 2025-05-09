@@ -3,8 +3,10 @@ package probe
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -19,6 +21,58 @@ func TestHttpProbe(t *testing.T) {
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
 		Url:                server.URL,
+		Method:             "GET",
+		MaxRedirects:       0,
+		SuccessStatusCodes: []int{200},
+		Headers:            map[string]string{},
+	})
+	if err != nil {
+		t.Fatalf("unable to initialize http probe: %v", err)
+	}
+
+	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	res, err := probe.Probe(ctx, "", "")
+	if err != nil {
+		t.Fatalf("probe failed: %v", err)
+	}
+
+	if len(res.Tests) != 1 {
+		t.Fatalf("unexpected test count: found %v expecting %v", len(res.Tests), 1)
+	}
+
+	test := res.Tests[0]
+	if test.Status != core.StatusUp {
+		t.Fatal("probe did not report target as up")
+	}
+}
+
+func TestHttpProbeUnixSocket(t *testing.T) {
+	socketPath := "/tmp/neko.sock"
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		t.Fatalf("unable to create unix socket listener: %v", err)
+	}
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	server := &http.Server{
+		Handler: handler,
+	}
+	defer (func() {
+		server.Close()
+		listener.Close()
+		os.Remove(socketPath)
+	})()
+
+	go server.Serve(listener)
+
+	probe, err := NewHttpProbe(HttpProbeOptions{
+		SocketPath:         &socketPath,
+		Url:                "http://unix/live",
 		Method:             "GET",
 		MaxRedirects:       0,
 		SuccessStatusCodes: []int{200},

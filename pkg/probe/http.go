@@ -28,6 +28,7 @@ var (
 )
 
 type httpProbe struct {
+	socketPath         *string
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -46,15 +47,59 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 		req.Header.Add(key, value)
 	}
 
-	r := net.Resolver{}
-	ips, err := r.LookupIP(ctx, "ip", p.url.Hostname())
-	if err != nil {
-		return nil, fmt.Errorf("unable to lookup domain: %w", err)
+	tests := []core.Test{}
+
+	type Target struct {
+		target    string
+		transport *http.Transport
 	}
 
-	tests := []core.Test{}
-	for _, ip := range ips {
-		test := core.Test{Target: ip.String(), Status: core.StatusUp}
+	targets := []Target{}
+
+	if p.socketPath != nil {
+		transport := &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return net.Dial("unix", *p.socketPath)
+			},
+		}
+		targets = append(targets, Target{
+			target:    *p.socketPath,
+			transport: transport,
+		})
+	} else {
+		getTransportIp := func(ip net.IP) *http.Transport {
+			dialer := &net.Dialer{}
+			transport := http.DefaultTransport.(*http.Transport).Clone()
+			transport.DialContext = func(ctx context.Context, network string, addr string) (net.Conn, error) {
+				parts := strings.Split(addr, ":")
+				if parts[0] == p.url.Host {
+					if ip.To4() != nil {
+						addr = fmt.Sprintf("%s:%s", ip, parts[1])
+					} else {
+						addr = fmt.Sprintf("[%s]:%s", ip, parts[1])
+					}
+				}
+				return dialer.DialContext(ctx, network, addr)
+			}
+
+			return transport
+		}
+
+		r := net.Resolver{}
+		ips, err := r.LookupIP(ctx, "ip", p.url.Hostname())
+		if err != nil {
+			return nil, fmt.Errorf("unable to lookup domain: %w", err)
+		}
+		for _, ip := range ips {
+			targets = append(targets, Target{
+				target:    ip.String(),
+				transport: getTransportIp(ip),
+			})
+		}
+	}
+
+	for _, target := range targets {
+		test := core.Test{Target: target.target, Status: core.StatusUp}
 
 		redirectCount := 0
 		client := http.Client{
@@ -67,20 +112,8 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 				return nil
 			},
 		}
-		client.Transport = http.DefaultTransport.(*http.Transport).Clone()
+		client.Transport = target.transport
 		client.Timeout = time.Duration(p.timeout) * time.Second
-		dialer := &net.Dialer{}
-		client.Transport.(*http.Transport).DialContext = func(ctx context.Context, network string, addr string) (net.Conn, error) {
-			parts := strings.Split(addr, ":")
-			if parts[0] == p.url.Host {
-				if ip.To4() != nil {
-					addr = fmt.Sprintf("%s:%s", ip, parts[1])
-				} else {
-					addr = fmt.Sprintf("[%s]:%s", ip, parts[1])
-				}
-			}
-			return dialer.DialContext(ctx, network, addr)
-		}
 
 		res, err := client.Do(req)
 		if err != nil {
@@ -105,6 +138,7 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 type HttpProbeOptions struct {
 	ProbeOptions
+	SocketPath         *string
 	Timeout            time.Duration
 	Url                string
 	Method             string
@@ -125,6 +159,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	}
 
 	instance := httpProbe{
+		socketPath:         options.SocketPath,
 		timeout:            options.Timeout,
 		url:                *u,
 		method:             options.Method,

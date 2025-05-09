@@ -33,11 +33,11 @@
         config,
         ...
       }: let
-        inherit (lib) mkIf mkDefault;
+        inherit (lib) mkIf mkDefault types;
 
         cfg = config.services.neko;
         settingsFormat = pkgs.formats.yaml {};
-        configFile = settingsFormat.generate "config.yaml" cfg.settings;
+        configFile = if !isNull cfg.configFile then cfg.configFile else settingsFormat.generate "config.yaml" cfg.settings;
       in {
         options = {
           services.neko = {
@@ -55,6 +55,11 @@
               };
               description = '''';
             };
+            configFile = lib.mkOption {
+              type = types.nullOr types.path;
+              default = null;
+              description = "";
+            };
           };
         };
         config = mkIf cfg.enable {
@@ -69,14 +74,14 @@
             };
 
             serviceConfig = {
-              ExecStart = "${cfg.package}/bin/server";
+              ExecStart = "${lib.getBin cfg.package}/bin/neko";
               PrivateTmp = mkDefault true;
               WorkingDirectory = mkDefault /tmp;
               DynamicUser = true;
               User = "neko";
               Group = "neko";
-              CapabilityBoundingSet = mkDefault [""];
-              DeviceAllow = [""];
+              CapabilityBoundingSet = mkDefault ["CAP_NET_RAW"];
+              DeviceAllow = mkDefault [];
               LockPersonality = true;
               MemoryDenyWriteExecute = true;
               NoNewPrivileges = true;
@@ -93,6 +98,7 @@
               RestrictAddressFamilies = [
                 "AF_INET"
                 "AF_INET6"
+                "AF_UNIX"
               ];
               RestrictNamespaces = true;
               RestrictRealtime = true;

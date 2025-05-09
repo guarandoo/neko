@@ -90,14 +90,11 @@ var (
 	}, []string{"instance", "monitor", "type"})
 )
 
-func runMonitor(config *Configuration, monitor *Monitor, lastTransition *time.Time, instance string) error {
+func runMonitor(config *Configuration, monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
 	metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 	start := time.Now()
 
-	ctx, cancel := context.WithTimeout(context.Background(), *monitor.Configuration.Probe.Timeout)
-	defer cancel()
-
-	res, err := monitor.Probe.Probe(ctx, instance, monitor.Name)
+	res, err := monitor.Probe.Probe(context, instance, monitor.Name)
 	duration := time.Since(start)
 	if err != nil {
 		metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
@@ -331,6 +328,8 @@ func main() {
 		monitors = append(monitors, monitor)
 	}
 
+	rootContext, _ := context.WithCancel(context.Background())
+
 	for _, m := range monitors {
 		go func(monitor Monitor) {
 			err := start.Wait(context.Background())
@@ -347,13 +346,26 @@ func main() {
 
 			ticker := time.NewTicker(interval)
 			log.Printf("starting monitor %s", monitor.Name)
+
+		outer:
 			for {
-				<-ticker.C
-				log.Printf("running monitor %v", monitor.Name)
-				if err := runMonitor(config, &monitor, &lastTransition, instance); err != nil {
-					continue
+				select {
+				case <-ticker.C:
+				case <-rootContext.Done():
+					break outer
 				}
+				log.Printf("running monitor %v", monitor.Name)
+
+				func() {
+					context, cancel := context.WithTimeout(rootContext, *monitor.Configuration.Probe.Timeout)
+					defer cancel()
+
+					if err := runMonitor(config, &monitor, context, &lastTransition, instance); err != nil {
+						return
+					}
+				}()
 			}
+			log.Printf("stopping monitor %s", monitor.Name)
 		}(m)
 	}
 

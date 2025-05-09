@@ -10,6 +10,14 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const DnsProbeType string = "dns"
+
+var onceInitDnsProbe sync.Once
+
+func initDnsProbe() {
+
+}
+
 type RecordType string
 
 const (
@@ -26,7 +34,7 @@ type dnsProbe struct {
 	recordType RecordType
 }
 
-func (p *dnsProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *dnsProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	r := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
@@ -103,12 +111,6 @@ func (p *dnsProbe) Probe(ctx context.Context) (*core.Result, error) {
 
 	tests = append(tests, test)
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitDnsProbe sync.Once
-
-func initDnsProbe() {
-
 }
 
 type DnsProbeOptions struct {

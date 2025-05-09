@@ -9,13 +9,21 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const SqlProbeType string = "sql"
+
+var onceInitSqlProbe sync.Once
+
+func initSqlProbe() {
+
+}
+
 type sqlProbe struct {
 	driver string
 	dsn    string
 	query  string
 }
 
-func (p *sqlProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *sqlProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	tests := []core.Test{}
 	test := core.Test{
 		Target: "",
@@ -43,12 +51,6 @@ func (p *sqlProbe) Probe(ctx context.Context) (*core.Result, error) {
 	tests = append(tests, test)
 
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitSqlProbe sync.Once
-
-func initSqlProbe() {
-
 }
 
 type SqlProbeOptions struct {

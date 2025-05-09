@@ -10,7 +10,22 @@ import (
 
 	"github.com/guarandoo/neko/pkg/core"
 	"github.com/openrdap/rdap"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+const DomainProbeType string = "domain"
+
+var (
+	onceInitDomainProbe         sync.Once
+	metricsDomainRemainingHours *prometheus.GaugeVec
+)
+
+func initDomainProbe() {
+	metricsDomainRemainingHours = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "neko_domain_remaining_hours",
+	}, []string{"instance", "monitor", "type", "domain"})
+}
 
 type domainProbe struct {
 	domain    string
@@ -18,7 +33,7 @@ type domainProbe struct {
 	threshold time.Duration
 }
 
-func (p *domainProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *domainProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	reqRaw := rdap.Request{
 		Type:  rdap.DomainRequest,
 		Query: p.domain,
@@ -53,6 +68,8 @@ func (p *domainProbe) Probe(ctx context.Context) (*core.Result, error) {
 	extras := make(map[string]any)
 	extras["remaining"] = remaining
 
+	metricsDomainRemainingHours.WithLabelValues(instance, monitor, DomainProbeType, p.domain).Set(remaining.Hours())
+
 	test := core.Test{
 		Target: p.domain,
 		Status: core.StatusDown,
@@ -68,12 +85,6 @@ func (p *domainProbe) Probe(ctx context.Context) (*core.Result, error) {
 	tests = append(tests, test)
 
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitDomainProbe sync.Once
-
-func initDomainProbe() {
-
 }
 
 type DomainProbeOptions struct {

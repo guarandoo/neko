@@ -31,7 +31,7 @@ func TestHttpProbe(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestHttpProbeNonOk(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func testHttpProbeRedirect(t *testing.T, redirectCount int, redirectLimit int) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestHttpProbeHeader(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("probe failed: %v", err)
 	}

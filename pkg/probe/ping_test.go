@@ -24,7 +24,7 @@ func TestPingProbe(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*4)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Errorf("probe failed: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestPingProbeFail(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*4)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Errorf("probe failed: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestPingProbeTimeout(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*4)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Errorf("probe failed: %v", err)
 	}

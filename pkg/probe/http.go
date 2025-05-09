@@ -15,6 +15,14 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const HttpProbeType string = "http"
+
+var onceInitHttpProbe sync.Once
+
+func initHttpProbe() {
+
+}
+
 var (
 	ErrInvalidUrlScheme = errors.New("invalid url scheme")
 )
@@ -28,7 +36,7 @@ type httpProbe struct {
 	headers            map[string]string
 }
 
-func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	req, err := http.NewRequestWithContext(ctx, p.method, p.url.String(), nil)
 	if err != nil {
 		return nil, err
@@ -93,12 +101,6 @@ func (p *httpProbe) Probe(ctx context.Context) (*core.Result, error) {
 	}
 
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitHttpProbe sync.Once
-
-func initHttpProbe() {
-
 }
 
 type HttpProbeOptions struct {

@@ -153,7 +153,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 
 	switch t.Type {
-	case "exec":
+	case probe.ExecProbeType:
 		var c struct {
 			Config ExecProbeTypeConfig `yaml:"config"`
 		}
@@ -167,7 +167,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			f.Timeout = &duration
 		}
 
-	case "ping":
+	case probe.PingProbeType:
 		var c struct {
 			Config PingProbeTypeConfig `yaml:"config"`
 		}
@@ -181,7 +181,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			f.Timeout = &duration
 		}
 
-	case "http":
+	case probe.HttpProbeType:
 		var c struct {
 			Config HttpProbeTypeConfig `yaml:"config"`
 		}
@@ -195,7 +195,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			f.Timeout = &duration
 		}
 
-	case "ssh":
+	case probe.SshProbeType:
 		var c struct {
 			Config SshProbeTypeConfig `yaml:"config"`
 		}
@@ -209,7 +209,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			f.Timeout = &duration
 		}
 
-	case "domain":
+	case probe.DomainProbeType:
 		var c struct {
 			Config DomainProbeTypeConfig `yaml:"config"`
 		}
@@ -223,7 +223,7 @@ func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 			f.Timeout = &duration
 		}
 
-	case "dns":
+	case probe.DnsProbeType:
 		var c struct {
 			Config DnsProbeTypeConfig `yaml:"config"`
 		}

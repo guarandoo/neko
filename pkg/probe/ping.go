@@ -13,6 +13,14 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const PingProbeType string = "ping"
+
+var onceInitPingProbe sync.Once
+
+func initPingProbe() {
+
+}
+
 type pingProbe struct {
 	address             string
 	count               int
@@ -21,7 +29,7 @@ type pingProbe struct {
 	privileged          bool
 }
 
-func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *pingProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	ips, err := net.LookupIP(p.address)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
@@ -74,12 +82,6 @@ func (p *pingProbe) Probe(ctx context.Context) (*core.Result, error) {
 	}
 
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitPingProbe sync.Once
-
-func initPingProbe() {
-
 }
 
 type PingProbeOptions struct {

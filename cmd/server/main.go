@@ -97,7 +97,7 @@ func runMonitor(config *Configuration, monitor *Monitor, lastTransition *time.Ti
 	ctx, cancel := context.WithTimeout(context.Background(), *monitor.Configuration.Probe.Timeout)
 	defer cancel()
 
-	res, err := monitor.Probe.Probe(ctx)
+	res, err := monitor.Probe.Probe(ctx, instance, monitor.Name)
 	duration := time.Since(start)
 	if err != nil {
 		metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)

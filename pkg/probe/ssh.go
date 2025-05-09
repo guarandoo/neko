@@ -12,6 +12,14 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const SshProbeType string = "ssh"
+
+var onceInitSshProbe sync.Once
+
+func initSshProbe() {
+
+}
+
 type sshProbe struct {
 	host            string
 	port            int
@@ -37,7 +45,7 @@ func connectAndAuthenticate(ctx context.Context, host string, config *ssh.Client
 	return nil
 }
 
-func (p *sshProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *sshProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	ips, err := net.LookupIP(p.host)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup domain: %w", err)
@@ -87,12 +95,6 @@ type SshProbeOptions struct {
 	Port           int
 	HostKey        *string
 	Authentication SshProbeAuthOptions
-}
-
-var onceInitSshProbe sync.Once
-
-func initSshProbe() {
-
 }
 
 func NewSshProbe(options SshProbeOptions) (Probe, error) {

@@ -38,7 +38,7 @@ func TestSqlProbe(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("unable to probe: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestSqlProbeFail(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err != nil {
 		t.Fatalf("unable to probe: %v", err)
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 type Probe interface {
-	Probe(context.Context) (*core.Result, error)
+	Probe(context.Context, string, string) (*core.Result, error)
 }
 
 type ProbeOptions struct {

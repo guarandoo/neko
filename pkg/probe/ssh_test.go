@@ -95,7 +95,7 @@ func TestSsh(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err := server.Shutdown(ctx); err != nil {
 		t.Fatalf("unable to shutdown ssh server: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestSshAuthFail(t *testing.T) {
 	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	res, err := probe.Probe(ctx)
+	res, err := probe.Probe(ctx, "", "")
 	if err := server.Shutdown(ctx); err != nil {
 		t.Fatalf("unable to shutdown ssh server: %v", err)
 	}

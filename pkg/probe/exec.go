@@ -8,12 +8,20 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 )
 
+const ExecProbeType string = "exec"
+
+var onceInitExecProbe sync.Once
+
+func initExecProbe() {
+
+}
+
 type execProbe struct {
 	name string
 	args []string
 }
 
-func (p *execProbe) Probe(ctx context.Context) (*core.Result, error) {
+func (p *execProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
 	tests := []core.Test{}
 	test := core.Test{Status: core.StatusUp, Target: p.name}
 
@@ -26,12 +34,6 @@ func (p *execProbe) Probe(ctx context.Context) (*core.Result, error) {
 
 	tests = append(tests, test)
 	return &core.Result{Tests: tests}, nil
-}
-
-var onceInitExecProbe sync.Once
-
-func initExecProbe() {
-
 }
 
 type ExecProbeOptions struct {

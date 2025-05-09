@@ -1,4 +1,6 @@
 instance: my-neko-instance-1
+metrics:
+  listenAddress: 127.0.0.1:3000
 notifiers:
   my_discord_notifier:
     type: discord_webhook

@@ -22,7 +22,7 @@ test:
 binary:
 	CGO_ENABLED=0 go build \
 	  -o ./dist/${GOOS}/${GOARCH}/${BIN_NAME} \
-	  ./cmd/server
+	  ./cmd/neko
 
 binary-linux-386: export GOOS := linux
 binary-linux-386: export GOARCH := 386

@@ -10,7 +10,7 @@ builds:
       - arm64
     id: neko
     dir: .
-    main: ./cmd/server
+    main: ./cmd/neko
 nfpms:
   - id: default
     package_name: neko

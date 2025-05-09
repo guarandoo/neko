@@ -1,12 +1,12 @@
 .vscode/
 dist/
 vendor/
-cmd/server/*.exe
+cmd/neko/*.exe
 
 config*.yaml
 !config.example.yaml
 values.yaml
 
-cmd/server/__debug_bin*
+cmd/neko/__debug_bin*
 
 result

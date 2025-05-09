@@ -18,6 +18,6 @@ values.yaml
 flake.nix
 flake.lock
 
-cmd/server/__debug_bin*
+cmd/neko/__debug_bin*
 
 result

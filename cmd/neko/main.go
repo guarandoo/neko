@@ -280,17 +280,26 @@ func main() {
 		log.Fatalf("unable to parse config: %s", err)
 	}
 
-	log.Print("setting up metrics")
-
 	var wg sync.WaitGroup
 
-	// metrics
-	http.Handle("/metrics", promhttp.Handler())
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		http.ListenAndServe(config.Metrics.ListenAddress, nil)
-	}()
+	if config.Metrics != nil && config.Metrics.Enable {
+		log.Print("setting up metrics")
+
+		metricsServerMux := http.NewServeMux()
+		metricsServerMux.Handle("/metrics", promhttp.Handler())
+		metricsServer := http.Server{
+			Addr:    config.Metrics.ListenAddress,
+			Handler: metricsServerMux,
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := metricsServer.ListenAndServe(); err != nil {
+				log.Fatalf("unable to start metrics server: %v", err)
+			}
+		}()
+	}
 
 	log.Print("setting up notifiers")
 
@@ -365,5 +374,6 @@ func main() {
 	log.Println("initialization complete, releasing monitors")
 	start.Set()
 
+	wg.Add(1)
 	wg.Wait()
 }

@@ -37,7 +37,10 @@
 
         cfg = config.services.neko;
         settingsFormat = pkgs.formats.yaml {};
-        configFile = if !isNull cfg.configFile then cfg.configFile else settingsFormat.generate "config.yaml" cfg.settings;
+        configFile =
+          if !isNull cfg.configFile
+          then cfg.configFile
+          else settingsFormat.generate "config.yaml" cfg.settings;
       in {
         options = {
           services.neko = {
@@ -116,7 +119,7 @@
           overlays = [self.overlay];
           inherit system;
         };
-      in rec {
+      in {
         packages = with pkgs; {
           inherit neko;
           default = neko;

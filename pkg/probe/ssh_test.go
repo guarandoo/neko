@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -65,13 +64,10 @@ func TestSsh(t *testing.T) {
 		},
 	}
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		wg.Add(1)
-
-		if err := server.Serve(listener); err != nil && !errors.Is(err, sshTest.ErrServerClosed) {
-			t.Fatalf("unable to start ssh server: %v", err)
-		}
+		server.Serve(listener)
 	}()
 
 	privDer := x509.MarshalPKCS1PrivateKey(privateKey)
@@ -152,16 +148,16 @@ func TestSshAuthFail(t *testing.T) {
 		},
 	}
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		wg.Add(1)
-
-		if err := server.Serve(listener); err != nil && !errors.Is(err, sshTest.ErrServerClosed) {
-			t.Fatalf("unable to start ssh server: %v", err)
-		}
+		server.Serve(listener)
 	}()
 
 	testPrivKey, err := generateKeyPair()
+	if err != nil {
+		t.Fatalf("unable to generate key pair: %v", err)
+	}
 	testPrivDer := x509.MarshalPKCS1PrivateKey(testPrivKey)
 	testPrivPem := pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",

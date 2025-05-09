@@ -21,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/samber/lo"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -59,16 +60,6 @@ func CreateRaft() error {
 	}
 
 	return nil
-}
-
-func Count[T any](ts []T, pred func(T) bool) int {
-	count := 0
-	for _, t := range ts {
-		if pred(t) {
-			count += 1
-		}
-	}
-	return count
 }
 
 var (
@@ -116,7 +107,7 @@ func runMonitor(config *Configuration, monitor *Monitor, context context.Context
 		status = res.Tests[0].Status
 	} else {
 		status = core.StatusDown
-		count := Count(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
+		count := lo.CountBy(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
 		if monitor.Configuration.ConsiderAllTests && count == testCount {
 			status = core.StatusUp
 		} else if !monitor.Configuration.ConsiderAllTests && count > 0 {

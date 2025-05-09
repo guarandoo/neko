@@ -15,7 +15,7 @@ func TestPingProbe(t *testing.T) {
 		PacketLossThreshold: 0.0,
 		Interval:            time.Second * 1,
 		ProbeOptions:        ProbeOptions{},
-		Privileged:          true,
+		Privileged:          false,
 	})
 	if err != nil {
 		t.Errorf("NewPingProbe failed: %v", err)

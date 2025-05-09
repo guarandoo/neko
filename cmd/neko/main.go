@@ -103,7 +103,7 @@ func runMonitor(config *Configuration, monitor *Monitor, lastTransition *time.Ti
 		metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 	}
-	log.Printf("Probe %v completed with result: %v", monitor.Name, res.Tests)
+	log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
 
 	metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
 

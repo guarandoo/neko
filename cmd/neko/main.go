@@ -273,10 +273,6 @@ func main() {
 		instance = instanceEnv
 	}
 
-	if err != nil {
-		log.Fatalf("unable to parse config: %s", err)
-	}
-
 	var wg sync.WaitGroup
 
 	if config.Metrics != nil && config.Metrics.Enable {

@@ -208,6 +208,19 @@ config:
 
 ### Probes
 
+```yaml
+type: ping
+timeout: 5s # optional probe timeout
+config:
+  address: acme.com
+```
+
+| Key       | Required | Description                                                            |
+| --------- | -------- | ---------------------------------------------------------------------- |
+| `type`    | Yes      | Type of probe, see succeeding sections for valid values                |
+| `timeout` | No       | Maximum amount of time allowed for the probe to complete its operation |
+| `config`  | No       | Probe-specific configuration                                           |
+
 Certain probes may execute multiple tests; for example, the [HTTP](#http) probe attempts the request using all resolved A and AAAA records.
 
 You can combine this with a monitor's `considerAllTests` setting to check if the target is reachable from all hosts instead of just one.
@@ -222,11 +235,13 @@ config:
   # packetLossThreshold: 0.5
 ```
 
-| Key                   | Required | Description                        |
-| --------------------- | -------- | ---------------------------------- |
-| `address`             | Yes      |                                    |
-| `count`               | No       | Number of ICMP packets to send out |
-| `packetLossThreshold` | No       | Packet loss threshold (in percent) |
+| Key                   | Required | Description                                     |
+| --------------------- | -------- | ----------------------------------------------- |
+| `address`             | Yes      |                                                 |
+| `count`               | No       | Number of ping packets to send out              |
+| `packetLossThreshold` | No       | Packet loss threshold (in decimal percent form) |
+| `privileged`          | No       | Whether to use raw ICMP                         |
+| `interval`            | No       | The amount of time between each ping packet     |
 
 #### HTTP
 
@@ -237,18 +252,23 @@ config:
   maxRedirects: 1
 ```
 
+or if the application uses HTTP over Unix sockets
+
 ```yaml
 type: http
 config:
-  address: https://unix/livez
   socketPath: /run/myapp/myapp.sock
+  address: https://unix/livez
+  maxRedirects: 1
 ```
 
-| Key            | Required | Description                         |
-| -------------- | -------- | ----------------------------------- |
-| `address`      | Yes      |                                     |
-| `maxRedirects` | No       | Maximum number of allowed redirects |
-| `socketPath`   | No       | Path to UNIX socket                 |
+| Key                  | Required | Description                                      |
+| -------------------- | -------- | ------------------------------------------------ |
+| `address`            | Yes      | The target URL to make requests against          |
+| `socketPath`         | No       | Path to UNIX socket                              |
+| `maxRedirects`       | No       | Maximum number of allowed redirects              |
+| `successStatusCodes` | No       | List of HTTP status codes to consider as success |
+| `headers`            | No       | A set of key-value pairs to send as HTTP headers |
 
 #### SSH
 

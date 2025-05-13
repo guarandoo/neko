@@ -25,7 +25,14 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-func CreateRaft() error {
+type app struct {
+	metricsProbeAttempts       *prometheus.CounterVec
+	metricsProbeAttemptsFailed *prometheus.CounterVec
+	metricsUp                  *prometheus.GaugeVec
+	metricsScrapeDuration      *prometheus.HistogramVec
+}
+
+func (p *app) createRaft() error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID("ASD")
 
@@ -62,38 +69,19 @@ func CreateRaft() error {
 	return nil
 }
 
-var (
-	metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "neko_probe_attempts_total",
-		Help: "",
-	}, []string{"instance", "monitor", "type"})
-	metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "neko_probe_attempts_failed",
-		Help: "",
-	}, []string{"instance", "monitor", "type"})
-	metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "neko_up",
-		Help: "",
-	}, []string{"instance", "monitor", "type"})
-	metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "neko_scrape_duration_nanoseconds",
-		Help: "",
-	}, []string{"instance", "monitor", "type"})
-)
-
-func runMonitor(config *Configuration, monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
-	metricsProbeAttempts.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+func (p *app) runMonitor(monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
+	p.metricsProbeAttempts.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 	start := time.Now()
 
 	res, err := monitor.Probe.Probe(context, instance, monitor.Name)
 	duration := time.Since(start)
 	if err != nil {
-		metricsProbeAttemptsFailed.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+		p.metricsProbeAttemptsFailed.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
 		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 	}
 	log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
 
-	metricsScrapeDuration.WithLabelValues(*config.Instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
+	p.metricsScrapeDuration.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
 
 	if len(res.Tests) == 0 {
 		return nil
@@ -125,7 +113,7 @@ func runMonitor(config *Configuration, monitor *Monitor, context context.Context
 	}
 
 	monitor.Status = status
-	gauge := metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
+	gauge := p.metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
 	if status == core.StatusUp {
 		gauge.Set(1)
 	} else {
@@ -182,7 +170,30 @@ func loadConfiguration(path string) (*Configuration, error) {
 	return &config, nil
 }
 
-func main() {
+func newApp() *app {
+	instance := app{
+		metricsProbeAttempts: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "neko_probe_attempts_total",
+			Help: "",
+		}, []string{"instance", "monitor", "type"}),
+		metricsProbeAttemptsFailed: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "neko_probe_attempts_failed",
+			Help: "",
+		}, []string{"instance", "monitor", "type"}),
+		metricsUp: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "neko_up",
+			Help: "",
+		}, []string{"instance", "monitor", "type"}),
+		metricsScrapeDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "neko_scrape_duration_nanoseconds",
+			Help: "",
+		}, []string{"instance", "monitor", "type"}),
+	}
+
+	return &instance
+}
+
+func (p *app) run() (*sync.WaitGroup, error) {
 	start := resetevent.NewManualResetEvent()
 
 	cfgPaths := []string{}
@@ -207,25 +218,25 @@ func main() {
 	}
 
 	if config == nil {
-		log.Fatalf("unable to load configuration")
+		return nil, errors.New("unable to load configuration")
 	}
 
 	if config.IncludeNotifiers != nil {
 		f, err := filepath.Abs(*config.IncludeNotifiers)
 		if err != nil {
-			log.Fatalf("unable to get filename: %s", err)
+			return nil, fmt.Errorf("unable to get filename: %w", err)
 		}
 		if _, err := os.Stat(f); errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("config file does not exist: %s", err)
+			return nil, fmt.Errorf("config file does not exist: %w", err)
 		}
 		t, err := os.ReadFile(f)
 		if err != nil {
-			log.Fatalf("unable to read config file: %s", err)
+			return nil, fmt.Errorf("unable to read config file: %w", err)
 		}
 		var c map[string]NotifierConfig
 		err = yaml.Unmarshal(t, &c)
 		if err != nil {
-			log.Fatalf("unable to unmarshal config text: %v", err)
+			return nil, fmt.Errorf("unable to unmarshal config text: %w", err)
 		}
 		for k, v := range c {
 			config.Notifiers[k] = v
@@ -347,7 +358,7 @@ func main() {
 					context, cancel := context.WithTimeout(rootContext, *monitor.Configuration.Probe.Timeout)
 					defer cancel()
 
-					if err := runMonitor(config, &monitor, context, &lastTransition, instance); err != nil {
+					if err := p.runMonitor(&monitor, context, &lastTransition, instance); err != nil {
 						return
 					}
 				}()
@@ -372,6 +383,16 @@ func main() {
 
 	log.Println("initialization complete, releasing monitors")
 	start.Set()
+
+	return &wg, nil
+}
+
+func main() {
+	app := newApp()
+	wg, err := app.run()
+	if err != nil {
+		log.Fatalf("unable to run application: %v", err)
+	}
 
 	wg.Add(1)
 	wg.Wait()

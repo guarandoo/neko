@@ -296,10 +296,11 @@ func (p *app) run() (*sync.WaitGroup, error) {
 		}()
 	}
 
-	log.Print("setting up notifiers")
 
 	notifiers := map[string]notifier.Notifier{}
 	for k, v := range config.Notifiers {
+		log.Printf("setting up notifier %s", k)
+
 		n, err := createNotifier(&v)
 		if err != nil {
 			log.Fatalf("unable to create notifier: %s", err)

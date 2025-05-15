@@ -83,7 +83,7 @@ func (p *app) runMonitor(extraLabels []string, monitor *Monitor, context context
 		p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
 		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 	}
-	slog.Info("probe %v completed with result: %v", monitor.Name, res.Tests)
+	slog.Info("probe completed", slog.String("name", monitor.Name), slog.Any("results", res.Tests))
 
 	p.metricsScrapeDuration.WithLabelValues(labels...).Observe(float64(duration.Nanoseconds()))
 
@@ -383,7 +383,7 @@ func (p *app) run() error {
 				case <-rootContext.Done():
 					break outer
 				}
-				slog.Info("running monitor %v", monitor.Name)
+				slog.Info("running monitor", slog.String("name", monitor.Name))
 
 				func() {
 					context, cancel := context.WithTimeout(rootContext, monitor.Configuration.Probe.Timeout)
@@ -395,7 +395,7 @@ func (p *app) run() error {
 					}
 				}()
 			}
-			slog.Info("stopping monitor %s", monitor.Name)
+			slog.Info("stopping monitor", slog.String("name", monitor.Name))
 		}(m)
 	}
 

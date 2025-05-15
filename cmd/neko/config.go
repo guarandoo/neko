@@ -11,22 +11,46 @@ import (
 )
 
 const (
-	EnvPrefix = "NEKO_"
+	EnvPrefix                      = "NEKO_"
+	DefaultNotifierTitleTemplate = "Monitor Status Change"
+	DefaultNotifierMessageTemplate = "{{.Name}} is now {{.Status}}, was {{.PreviousStatus}} for {{.Duration}}"
 )
 
 func getEnv(key string) (string, bool) {
 	return os.LookupEnv(fmt.Sprintf("%v%v", EnvPrefix, key))
 }
 
-type SmtpNotifierCOnfig struct {
-	Host       string   `yaml:"host"`
-	Port       int      `yaml:"port"`
-	Username   string   `yaml:"username"`
-	Password   string   `yaml:"password"`
-	Sender     string   `yaml:"sender"`
-	Recipients []string `yaml:"recipients"`
+// region notifiers
+
+// region smtpnotifier
+type SmtpNotifierConfig struct {
+	Host            string   `yaml:"host"`
+	Port            int      `yaml:"port"`
+	Username        string   `yaml:"username"`
+	Password        string   `yaml:"password"`
+	Sender          string   `yaml:"sender"`
+	Recipients      []string `yaml:"recipients"`
+	SubjectTemplate string   `yaml:"subjectTemplate"`
+	BodyTemplate    string   `yaml:"bodyTemplate"`
 }
 
+func (t *SmtpNotifierConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt SmtpNotifierConfig
+	value := rt{
+		Port:            587,
+		SubjectTemplate: DefaultNotifierTitleTemplate,
+		BodyTemplate:    DefaultNotifierMessageTemplate,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = SmtpNotifierConfig(value)
+	return nil
+}
+
+// endregion
+
+// region discordwebhooknotifier
 type DiscordWebhookNotifierReuseMessageConfig struct {
 	Enable    bool    `yaml:"enable"`
 	MessageId *string `yaml:"messageId"`
@@ -34,17 +58,48 @@ type DiscordWebhookNotifierReuseMessageConfig struct {
 
 type DiscordWebhookNotifierConfig struct {
 	Url             string                                    `yaml:"url"`
-	MessageTemplate *string                                   `yaml:"messageTemplate"`
+	MessageTemplate string                                    `yaml:"messageTemplate"`
 	ReuseMessage    *DiscordWebhookNotifierReuseMessageConfig `yaml:"reuseMessage"`
 }
 
-type GotifyNotifierConfig struct {
-	Url             string  `yaml:"url"`
-	Token           string  `yaml:"token"`
-	TitleTemplate   *string `yaml:"titleTemplate"`
-	MessageTemplate *string `yaml:"messsageTemplate"`
+func (t *DiscordWebhookNotifierConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt DiscordWebhookNotifierConfig
+	value := rt{
+		MessageTemplate: DefaultNotifierMessageTemplate,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = DiscordWebhookNotifierConfig(value)
+	return nil
 }
 
+// endregion
+
+// region gotifynotifier
+type GotifyNotifierConfig struct {
+	Url             string `yaml:"url"`
+	Token           string `yaml:"token"`
+	TitleTemplate   string `yaml:"titleTemplate"`
+	MessageTemplate string `yaml:"messsageTemplate"`
+}
+
+func (t *GotifyNotifierConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt GotifyNotifierConfig
+	value := rt{
+		TitleTemplate:   DefaultNotifierTitleTemplate,
+		MessageTemplate: DefaultNotifierMessageTemplate,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = GotifyNotifierConfig(value)
+	return nil
+}
+
+// endregion
+
+// region notifier
 type NotifierConfig struct {
 	Type   string `yaml:"type"`
 	Config any    `yaml:"config"`
@@ -62,7 +117,7 @@ func (f *NotifierConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	switch t.Type {
 	case "smtp":
 		var c struct {
-			Config SmtpNotifierCOnfig `yaml:"config"`
+			Config SmtpNotifierConfig `yaml:"config"`
 		}
 		err := unmarshal(&c)
 		if err != nil {
@@ -93,14 +148,22 @@ func (f *NotifierConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
+// endregion
+
+// endregion
+
+// region probes
 type ProbeTypeConfig struct {
 }
 
+// region execprobetype
 type ExecProbeTypeConfig struct {
 	ProbeTypeConfig
 	Path string   `yaml:"path"`
 	Args []string `yaml:"args"`
 }
+
+// endregion
 
 // region pingprobetype
 type PingProbeTypeConfig struct {
@@ -470,5 +533,7 @@ func (c *Configuration) Validate() error {
 	}
 	return nil
 }
+
+// endregion
 
 // endregion

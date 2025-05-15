@@ -12,9 +12,6 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 
 	switch v := pc.Config.(type) {
 	case ExecProbeTypeConfig:
-		// #region defaults
-		// endregion
-
 		p, err = probe.NewExecProbe(probe.ExecProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},
 			Name:         v.Path,
@@ -87,5 +84,6 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		p = nil
 		err = fmt.Errorf("unknown probe type: %s", pc.Type)
 	}
+
 	return p, err
 }

@@ -2,10 +2,21 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 	"time"
 
 	"github.com/guarandoo/neko/pkg/probe"
+	"gopkg.in/yaml.v3"
 )
+
+const (
+	EnvPrefix = "NEKO_"
+)
+
+func getEnv(key string) (string, bool) {
+	return os.LookupEnv(fmt.Sprintf("%v%v", EnvPrefix, key))
+}
 
 type SmtpNotifierCOnfig struct {
 	Host       string   `yaml:"host"`
@@ -91,163 +102,253 @@ type ExecProbeTypeConfig struct {
 	Args []string `yaml:"args"`
 }
 
+// region pingprobetype
 type PingProbeTypeConfig struct {
 	ProbeTypeConfig
-	Address             string   `yaml:"address"`
-	Count               *int     `yaml:"count"`
-	PacketLossThreshold *float64 `yaml:"packetLossThreshold"`
-	Privileged          *bool    `yaml:"privileged"`
-	Interval            *string  `yaml:"interval"`
+	Address             string        `yaml:"address"`
+	Count               int           `yaml:"count"`
+	PacketLossThreshold float64       `yaml:"packetLossThreshold"`
+	Privileged          bool          `yaml:"privileged"`
+	Interval            time.Duration `yaml:"interval"`
 }
 
+func (t *PingProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt PingProbeTypeConfig
+	value := rt{
+		Count:               1,
+		PacketLossThreshold: 1.0,
+		Privileged:          false,
+		Interval:            time.Second * 1,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = PingProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
+// region httpprobetype
 type HttpProbeTypeConfig struct {
 	ProbeTypeConfig
-	Address            string             `yaml:"address"`
-	SocketPath         *string            `yaml:"socketPath"`
-	MaxRedirects       *int               `yaml:"maxRedirects"`
-	SuccessStatusCodes *[]int             `yaml:"successStatusCodes"`
-	Headers            *map[string]string `yaml:"headers"`
+	Address            string            `yaml:"address"`
+	SocketPath         string            `yaml:"socketPath"`
+	MaxRedirects       int               `yaml:"maxRedirects"`
+	SuccessStatusCodes []int             `yaml:"successStatusCodes"`
+	Headers            map[string]string `yaml:"headers"`
 }
 
+func (t *HttpProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt HttpProbeTypeConfig
+	value := rt{
+		MaxRedirects:       20,
+		SuccessStatusCodes: []int{200},
+		Headers:            map[string]string{},
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = HttpProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
+// region sshprobetype
 type SshProbeTypeConfig struct {
 	ProbeTypeConfig
-	Host    string  `yaml:"host"`
-	Port    *int    `yaml:"port"`
-	HostKey *string `yaml:"hostKey"`
+	Host    string `yaml:"host"`
+	Port    int    `yaml:"port"`
+	HostKey string `yaml:"hostKey"`
 }
 
+func (t *SshProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt SshProbeTypeConfig
+	value := rt{
+		Port: 22,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = SshProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
+// region domainprobetype
 type DomainProbeTypeConfig struct {
 	ProbeTypeConfig
-	Domain    string  `yaml:"domain"`
-	Threshold *string `yaml:"threshold"`
+	Domain    string        `yaml:"domain"`
+	Threshold time.Duration `yaml:"threshold"`
 }
 
+func (t *DomainProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt DomainProbeTypeConfig
+	value := rt{
+		Threshold: 0,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = DomainProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
+// region dnsprobetype
 type DnsProbeTypeConfig struct {
 	ProbeTypeConfig
-	Server     string            `yaml:"server"`
-	Port       *int              `yaml:"port"`
-	Target     string            `yaml:"target"`
-	RecordType *probe.RecordType `yaml:"recordType"`
+	Server     string           `yaml:"server"`
+	Port       int              `yaml:"port"`
+	Target     string           `yaml:"target"`
+	RecordType probe.RecordType `yaml:"recordType"`
 }
 
+func (t *DnsProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt DnsProbeTypeConfig
+	value := rt{
+		Port:       53,
+		RecordType: probe.Host,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = DnsProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
+// region probe
 type ProbeConfig struct {
 	Type    string
-	Timeout *time.Duration
+	Timeout time.Duration
 	Config  any
 }
 
-func (f *ProbeConfig) UnmarshalYAML(unmarshal func(any) error) error {
-	var t struct {
-		Type    string  `yaml:"type"`
-		Timeout *string `yaml:"timeout"`
-	}
-	err := unmarshal(&t)
-	if err != nil {
-		return fmt.Errorf("unable to unmarshal config: %w", err)
-	}
-	f.Type = t.Type
-	if t.Timeout != nil {
-		duration, err := time.ParseDuration(*t.Timeout)
-		if err == nil {
-			f.Timeout = &duration
+func (t *ProbeConfig) UnmarshalYAML(n *yaml.Node) error {
+	{
+		var c struct {
+			Type string `yaml:"type"`
 		}
+		err := n.Decode(&c)
+		if err != nil {
+			return fmt.Errorf("unable to unmarshal config: %w", err)
+		}
+		t.Type = c.Type
 	}
 
 	switch t.Type {
 	case probe.ExecProbeType:
-		var c struct {
-			Config ExecProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration       `yaml:"timeout"`
+			Config  ExecProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Minute * 1,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 30
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	case probe.PingProbeType:
-		var c struct {
-			Config PingProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration       `yaml:"timeout"`
+			Config  PingProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Second * 4,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 4
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	case probe.HttpProbeType:
-		var c struct {
-			Config HttpProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration       `yaml:"timeout"`
+			Config  HttpProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Minute * 1,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 60
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	case probe.SshProbeType:
-		var c struct {
-			Config SshProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration      `yaml:"timeout"`
+			Config  SshProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Second * 30,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 30
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	case probe.DomainProbeType:
-		var c struct {
-			Config DomainProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration         `yaml:"timeout"`
+			Config  DomainProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Second * 30,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 30
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	case probe.DnsProbeType:
-		var c struct {
-			Config DnsProbeTypeConfig `yaml:"config"`
+		type rt struct {
+			Timeout time.Duration      `yaml:"timeout"`
+			Config  DnsProbeTypeConfig `yaml:"config"`
 		}
-		err := unmarshal(&c)
+		c := rt{
+			Timeout: time.Second * 5,
+		}
+		err := n.Decode(&c)
 		if err != nil {
 			return err
 		}
-		f.Config = c.Config
-		if f.Timeout == nil {
-			duration := time.Second * 5
-			f.Timeout = &duration
-		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
 
 	default:
-		return fmt.Errorf("unknown probe type: %s", f.Type)
+		return fmt.Errorf("unknown probe type: %s", t.Type)
 	}
+
 	return nil
 }
 
+// endregion
+
+// region probenotifier
 type ProbeNotifierConfig struct {
 	Name string
 }
 
+// endregion
+
+// region monitor
 type MonitorConfig struct {
 	Name             string                `yaml:"name"`
 	Interval         string                `yaml:"interval"`
@@ -257,16 +358,117 @@ type MonitorConfig struct {
 	Invert           bool                  `yaml:"invert"`
 }
 
-type MetricsConfiguration struct {
-	Enable        bool   `yaml:"enable"`
-	ListenAddress string `yaml:"listenAddress"`
+func (t *MonitorConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt MonitorConfig
+	value := rt{
+		Interval: "1m",
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = MonitorConfig(value)
+	return nil
 }
 
-type Configuration struct {
-	Instance         *string                   `yaml:"instance"`
-	Metrics          *MetricsConfiguration     `yaml:"metrics"`
-	Notifiers        map[string]NotifierConfig `yaml:"notifiers"`
-	IncludeNotifiers *string                   `yaml:"includeNotifiers"`
-	Monitors         []MonitorConfig           `yaml:"monitors"`
-	IncludeMonitors  *string                   `yaml:"includeMonitors"`
+// endregion
+
+// region metrics
+type MetricsConfiguration struct {
+	Enable        bool              `yaml:"enable"`
+	ListenAddress string            `yaml:"listenAddress"`
+	ExtraLabels   map[string]string `yaml:"extraLabels"`
 }
+
+func (t *MetricsConfiguration) UnmarshalYAML(n *yaml.Node) error {
+	type rt MetricsConfiguration
+	value := rt{
+		ListenAddress: ":3000",
+		ExtraLabels:   map[string]string{},
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = MetricsConfiguration(value)
+	return nil
+}
+
+// endregion
+
+// region memberlist
+type MemberlistConfiguration struct {
+	BindAddress      string `yaml:"bindAddress"`
+	BindPort         int    `yaml:"bindPort"`
+	AdvertiseAddress string `yaml:"advertiseAddress"`
+	AdvertisePort    int    `yaml:"advertisePort"`
+}
+
+func (t *MemberlistConfiguration) UnmarshalYAML(n *yaml.Node) error {
+	type rt MemberlistConfiguration
+	value := rt{
+		BindAddress:      "0.0.0.0",
+		BindPort:         7946,
+		AdvertiseAddress: "0.0.0.0",
+		AdvertisePort:    7946,
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = MemberlistConfiguration(value)
+	return nil
+}
+
+// endregion
+
+// region cluster
+type ClusterConfiugration struct {
+	Enable     bool                    `yaml:"enable"`
+	Memberlist MemberlistConfiguration `yaml:"memberlist"`
+	Join       []string                `yaml:"join"`
+}
+
+// endregion
+
+// region configuration
+type Configuration struct {
+	Instance         string                    `yaml:"instance"`
+	Metrics          MetricsConfiguration      `yaml:"metrics"`
+	Cluster          ClusterConfiugration      `yaml:"cluster"`
+	ConcurrentTasks  int                       `yaml:"concurrentTasks"`
+	Notifiers        map[string]NotifierConfig `yaml:"notifiers"`
+	IncludeNotifiers string                    `yaml:"includeNotifiers"`
+	Monitors         []MonitorConfig           `yaml:"monitors"`
+	IncludeMonitors  string                    `yaml:"includeMonitors"`
+}
+
+func (t *Configuration) UnmarshalYAML(n *yaml.Node) error {
+	type rt Configuration
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "neko"
+	}
+
+	value := rt{
+		Instance:        hostname,
+		ConcurrentTasks: runtime.NumCPU(),
+	}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = Configuration(value)
+
+	if value, found := getEnv("INSTANCE"); found {
+		t.Instance = value
+	}
+
+	return nil
+}
+
+func (c *Configuration) Validate() error {
+	if c.ConcurrentTasks < 1 {
+		return fmt.Errorf("invalid concurrentTasks value: %v", c.ConcurrentTasks)
+	}
+	return nil
+}
+
+// endregion

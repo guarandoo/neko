@@ -71,7 +71,7 @@ func TestHttpProbeUnixSocket(t *testing.T) {
 	go server.Serve(listener)
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
-		SocketPath:         &socketPath,
+		SocketPath:         socketPath,
 		Url:                "http://unix/live",
 		Method:             "GET",
 		MaxRedirects:       0,

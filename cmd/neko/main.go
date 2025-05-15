@@ -16,13 +16,15 @@ import (
 
 	"github.com/guarandoo/neko/pkg/core"
 	"github.com/guarandoo/neko/pkg/notifier"
+	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
+	"github.com/hashicorp/serf/serf"
 	"github.com/mxmauro/resetevent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/samber/lo"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type app struct {
@@ -69,19 +71,20 @@ func (p *app) createRaft() error {
 	return nil
 }
 
-func (p *app) runMonitor(monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
-	p.metricsProbeAttempts.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+func (p *app) runMonitor(extraLabels []string, monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
+	labels := lo.Union([]string{instance, monitor.Name, monitor.Configuration.Probe.Type}, extraLabels)
+	p.metricsProbeAttempts.WithLabelValues(labels...).Add(1.0)
 	start := time.Now()
 
 	res, err := monitor.Probe.Probe(context, instance, monitor.Name)
 	duration := time.Since(start)
 	if err != nil {
-		p.metricsProbeAttemptsFailed.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Add(1.0)
+		p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
 		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 	}
 	log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
 
-	p.metricsScrapeDuration.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type).Observe(float64(duration.Nanoseconds()))
+	p.metricsScrapeDuration.WithLabelValues(labels...).Observe(float64(duration.Nanoseconds()))
 
 	if len(res.Tests) == 0 {
 		return nil
@@ -113,7 +116,7 @@ func (p *app) runMonitor(monitor *Monitor, context context.Context, lastTransiti
 	}
 
 	monitor.Status = status
-	gauge := p.metricsUp.WithLabelValues(instance, monitor.Name, monitor.Configuration.Probe.Type)
+	gauge := p.metricsUp.WithLabelValues(labels...)
 	if status == core.StatusUp {
 		gauge.Set(1)
 	} else {
@@ -171,29 +174,12 @@ func loadConfiguration(path string) (*Configuration, error) {
 }
 
 func newApp() *app {
-	instance := app{
-		metricsProbeAttempts: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "neko_probe_attempts_total",
-			Help: "",
-		}, []string{"instance", "monitor", "type"}),
-		metricsProbeAttemptsFailed: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "neko_probe_attempts_failed",
-			Help: "",
-		}, []string{"instance", "monitor", "type"}),
-		metricsUp: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "neko_up",
-			Help: "",
-		}, []string{"instance", "monitor", "type"}),
-		metricsScrapeDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Name: "neko_scrape_duration_nanoseconds",
-			Help: "",
-		}, []string{"instance", "monitor", "type"}),
-	}
+	instance := app{}
 
 	return &instance
 }
 
-func (p *app) run() (*sync.WaitGroup, error) {
+func (p *app) run() error {
 	start := resetevent.NewManualResetEvent()
 
 	cfgPaths := []string{}
@@ -218,66 +204,77 @@ func (p *app) run() (*sync.WaitGroup, error) {
 	}
 
 	if config == nil {
-		return nil, errors.New("unable to load configuration")
+		return errors.New("unable to load configuration")
 	}
 
-	if config.IncludeNotifiers != nil {
-		f, err := filepath.Abs(*config.IncludeNotifiers)
+	if err := config.Validate(); err != nil {
+		return fmt.Errorf("config validation failed: %v", err)
+	}
+
+	if len(config.IncludeNotifiers) > 0 {
+		f, err := filepath.Abs(config.IncludeNotifiers)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get filename: %w", err)
+			return fmt.Errorf("unable to get filename: %w", err)
 		}
 		if _, err := os.Stat(f); errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("config file does not exist: %w", err)
+			return fmt.Errorf("config file does not exist: %w", err)
 		}
 		t, err := os.ReadFile(f)
 		if err != nil {
-			return nil, fmt.Errorf("unable to read config file: %w", err)
+			return fmt.Errorf("unable to read config file: %w", err)
 		}
 		var c map[string]NotifierConfig
 		err = yaml.Unmarshal(t, &c)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal config text: %w", err)
+			return fmt.Errorf("unable to unmarshal config text: %w", err)
 		}
 		for k, v := range c {
 			config.Notifiers[k] = v
 		}
 	}
 
-	if config.IncludeMonitors != nil {
-		f, err := filepath.Abs(*config.IncludeMonitors)
+	if len(config.IncludeMonitors) > 0 {
+		f, err := filepath.Abs(config.IncludeMonitors)
 		if err != nil {
-			log.Fatalf("unable to get filename: %s", err)
+			return fmt.Errorf("unable to get filename: %s", err)
 		}
 		if _, err := os.Stat(f); errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("config file does not exist: %s", err)
+			return fmt.Errorf("config file does not exist: %s", err)
 		}
 		t, err := os.ReadFile(f)
 		if err != nil {
-			log.Fatalf("unable to read config file: %s", err)
+			return fmt.Errorf("unable to read config file: %s", err)
 		}
 		var c []MonitorConfig
 		err = yaml.Unmarshal(t, &c)
 		if err != nil {
-			log.Fatalf("unable to unmarshal config text: %v", err)
+			return fmt.Errorf("unable to unmarshal config text: %v", err)
 		}
 		config.Monitors = append(config.Monitors, c...)
 	}
 
-	instance := ""
-	if hostname, err := os.Hostname(); err == nil {
-		instance = hostname
-	}
-	if config.Instance != nil {
-		instance = *config.Instance
-	}
-	instanceEnv := os.Getenv("NEKO_INSTANCE")
-	if len(instanceEnv) != 0 {
-		instance = instanceEnv
-	}
-
 	var wg sync.WaitGroup
 
-	if config.Metrics != nil && config.Metrics.Enable {
+	if config.Metrics.Enable {
+		keys := lo.Keys(config.Metrics.ExtraLabels)
+		labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
+		p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "neko_probe_attempts_total",
+			Help: "",
+		}, labels)
+		p.metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "neko_probe_attempts_failed",
+			Help: "",
+		}, labels)
+		p.metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "neko_up",
+			Help: "",
+		}, labels)
+		p.metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "neko_scrape_duration_nanoseconds",
+			Help: "",
+		}, labels)
+
 		log.Print("setting up metrics")
 
 		metricsServerMux := http.NewServeMux()
@@ -296,6 +293,33 @@ func (p *app) run() (*sync.WaitGroup, error) {
 		}()
 	}
 
+	clusterConfig := config.Cluster
+	if clusterConfig.Enable {
+		log.Print("setting up cluster")
+
+		memberlistCfg := memberlist.DefaultWANConfig()
+		memberlistCfg.Name = config.Instance
+
+		serfCh := make(chan serf.Event, 16)
+
+		serfCfg := serf.DefaultConfig()
+		serfCfg.NodeName = config.Instance
+		serfCfg.EventCh = serfCh
+		serfCfg.MemberlistConfig = memberlistCfg
+		serfCfg.LogOutput = os.Stdout
+
+		s, err := serf.Create(serfCfg)
+		if err != nil {
+			log.Fatalf("failed to create serf: %v", err)
+		}
+
+		if len(clusterConfig.Join) > 0 {
+			_, err = s.Join(clusterConfig.Join, false)
+			if err != nil {
+				log.Fatalf("unable to join cluster: %v", err)
+			}
+		}
+	}
 
 	notifiers := map[string]notifier.Notifier{}
 	for k, v := range config.Notifiers {
@@ -329,6 +353,8 @@ func (p *app) run() (*sync.WaitGroup, error) {
 
 	rootContext, _ := context.WithCancel(context.Background())
 
+	// pool := pond.NewPool(config.ConcurrentTasks)
+
 	for _, m := range monitors {
 		go func(monitor Monitor) {
 			err := start.Wait(context.Background())
@@ -356,10 +382,11 @@ func (p *app) run() (*sync.WaitGroup, error) {
 				log.Printf("running monitor %v", monitor.Name)
 
 				func() {
-					context, cancel := context.WithTimeout(rootContext, *monitor.Configuration.Probe.Timeout)
+					context, cancel := context.WithTimeout(rootContext, monitor.Configuration.Probe.Timeout)
 					defer cancel()
 
-					if err := p.runMonitor(&monitor, context, &lastTransition, instance); err != nil {
+					extraLabels := lo.Values(config.Metrics.ExtraLabels)
+					if err := p.runMonitor(extraLabels, &monitor, context, &lastTransition, config.Instance); err != nil {
 						return
 					}
 				}()
@@ -385,16 +412,20 @@ func (p *app) run() (*sync.WaitGroup, error) {
 	log.Println("initialization complete, releasing monitors")
 	start.Set()
 
-	return &wg, nil
+	ticker := time.NewTicker(3 * time.Second)
+	ch := make(chan int)
+	for {
+		select {
+		case <-ch:
+		case <-ticker.C:
+		}
+	}
 }
 
 func main() {
 	app := newApp()
-	wg, err := app.run()
+	err := app.run()
 	if err != nil {
 		log.Fatalf("unable to run application: %v", err)
 	}
-
-	wg.Add(1)
-	wg.Wait()
 }

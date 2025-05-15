@@ -145,12 +145,14 @@ notifiers:
   - my_smtp_notifier
 ```
 
-| Key                | Type           | Required | Description                                                     |
-| ------------------ | -------------- | -------- | --------------------------------------------------------------- |
-| `interval`         | Duration       | Yes      | Amount of time in between probe attempts                        |
-| `probe`            | ProbeConfig    | Yes      | A [probe](#probes) configuration                                |
-| `notifiers`        | NotifierConfig | No       | A list of [notifiers](#notifiers)                               |
-| `considerAllTests` | bool           | No       | Whether to require all tests to pass to consider the monitor Up |
+| Key                | Type            | Required | Default | Description                                                     |
+| ------------------ | --------------- | -------- | ------- | --------------------------------------------------------------- |
+| `name`             | string          | Yes      |         | Amount of time in between probe attempts                        |
+| `interval`         | `time.Duration` | Yes      | `1m`    |                                                                 |
+| `probe`            | ProbeConfig     | Yes      |         | A [probe](#probes) configuration                                |
+| `notifiers`        | NotifierConfig  | No       | `[]`    | A list of [notifiers](#notifiers)                               |
+| `considerAllTests` | bool            | No       | `false` | Whether to require all tests to pass to consider the monitor Up |
+| `invert`           | bool            | No       | `false` |                                                                 |
 
 ### Notifiers
 
@@ -318,13 +320,12 @@ config:
   type: A
 ```
 
-| Key          | Required | Description                                                      |
-| ------------ | -------- | ---------------------------------------------------------------- |
-| `host`       | Yes      | DNS server to query                                              |
-| `port`       | No       |                                                                  |
-| `timeout`    | No       |                                                                  |
-| `target`     | Yes      |                                                                  |
-| `recordType` | No       | Must be one of `Host` (A/AAAA), `NS` or `MX`, defaults to `Host` |
+| Key          | Required | Default | Description                                  |
+| ------------ | -------- | ------- | -------------------------------------------- |
+| `host`       | Yes      |         | DNS server to query                          |
+| `port`       | No       | 53      |                                              |
+| `target`     | Yes      |         |                                              |
+| `recordType` | No       | Host    | Must be one of `Host` (A/AAAA), `NS` or `MX` |
 
 > ❕ It is recommended that `target` be a stably resolvable domain otherwise this probe may produce false-positives.
 

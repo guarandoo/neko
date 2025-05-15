@@ -28,7 +28,7 @@ var (
 )
 
 type httpProbe struct {
-	socketPath         *string
+	socketPath         string
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -56,14 +56,14 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 	targets := []Target{}
 
-	if p.socketPath != nil {
+	if len(p.socketPath) > 0 {
 		transport := &http.Transport{
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return net.Dial("unix", *p.socketPath)
+				return net.Dial("unix", p.socketPath)
 			},
 		}
 		targets = append(targets, Target{
-			target:    *p.socketPath,
+			target:    p.socketPath,
 			transport: transport,
 		})
 	} else {
@@ -138,7 +138,7 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 type HttpProbeOptions struct {
 	ProbeOptions
-	SocketPath         *string
+	SocketPath         string
 	Timeout            time.Duration
 	Url                string
 	Method             string

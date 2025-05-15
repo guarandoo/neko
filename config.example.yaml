@@ -1,6 +1,15 @@
 instance: my-neko-instance-1
 metrics:
+  enable: false
   listenAddress: 127.0.0.1:3000
+  extraLabels:
+    region: usa-1a
+# cluster:
+#   enable: true
+#   memberlist:
+#     bindAddress: 0.0.0.0
+#     bindPort: 7946
+#     join: []
 notifiers:
   my_discord_notifier:
     type: discord_webhook

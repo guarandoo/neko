@@ -93,7 +93,7 @@ type SshProbeOptions struct {
 	ProbeOptions
 	Host           string
 	Port           int
-	HostKey        *string
+	HostKey        string
 	Authentication SshProbeAuthOptions
 }
 
@@ -102,10 +102,10 @@ func NewSshProbe(options SshProbeOptions) (Probe, error) {
 
 	var hostKeyCallback ssh.HostKeyCallback
 
-	if options.HostKey == nil {
+	if len(options.HostKey) > 0 {
 		hostKeyCallback = ssh.InsecureIgnoreHostKey()
 	} else {
-		publicKey, err := ssh.ParsePublicKey([]byte(*options.HostKey))
+		publicKey, err := ssh.ParsePublicKey([]byte(options.HostKey))
 		if err != nil {
 			return nil, fmt.Errorf("unable to create ssh probe: %w", err)
 		}

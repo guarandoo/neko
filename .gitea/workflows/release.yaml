@@ -55,7 +55,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            LDFLAGS=-X 'main.Version=${{ steps.build_meta.outputs.version }}' -X 'main.Commit=${{ steps.build_meta.outputs.revision }}' -X 'main.BuildTime=${{ steps.build_meta.outputs.build_time }}'
+            LDFLAGS="-X 'main.Version=${{ steps.build_meta.outputs.version }}' -X 'main.Commit=${{ steps.build_meta.outputs.revision }}' -X 'main.BuildTime=${{ steps.build_meta.outputs.build_time }}'"
   binary:
     runs-on: ubuntu-latest
     if: startsWith(gitea.ref, 'refs/tags/')

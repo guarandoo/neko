@@ -15,7 +15,7 @@ ARG TARGETOS
 ARG LDFLAGS
 RUN --mount=type=cache,id=go-mod,sharing=locked,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
-        -ldflags "${LDFLAGS}" \
+        -ldflags ${LDFLAGS} \
         -o neko \
         ./cmd/neko
 RUN setcap cap_net_raw=+ep neko

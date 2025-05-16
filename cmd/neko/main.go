@@ -33,6 +33,7 @@ type app struct {
 	metricsProbeAttemptsFailed *prometheus.CounterVec
 	metricsUp                  *prometheus.GaugeVec
 	metricsScrapeDuration      *prometheus.HistogramVec
+	configuration              *Configuration
 }
 
 func (p *app) createRaft() error {
@@ -192,28 +193,27 @@ func (p *app) run() error {
 	cfgPaths = append(cfgPaths, "config.yaml")
 	cfgPaths = append(cfgPaths, "/etc/neko/config.yaml")
 
-	var config *Configuration
-	var err error
 	for _, cfgPath := range cfgPaths {
-		config, err = loadConfiguration(cfgPath)
+		config, err := loadConfiguration(cfgPath)
 		if err != nil {
 			slog.Info("unable to load configuration from", slog.String("path", cfgPath), slog.Any("error", err))
 		} else {
 			slog.Info("successfully loaded configuration", slog.String("path", cfgPath))
+			p.configuration = config
 			break
 		}
 	}
 
-	if config == nil {
+	if p.configuration == nil {
 		return errors.New("unable to load configuration")
 	}
 
-	if err := config.Validate(); err != nil {
+	if err := p.configuration.Validate(); err != nil {
 		return fmt.Errorf("config validation failed: %v", err)
 	}
 
-	if len(config.IncludeNotifiers) > 0 {
-		f, err := filepath.Abs(config.IncludeNotifiers)
+	if len(p.configuration.IncludeNotifiers) > 0 {
+		f, err := filepath.Abs(p.configuration.IncludeNotifiers)
 		if err != nil {
 			return fmt.Errorf("unable to get filename: %w", err)
 		}
@@ -230,12 +230,12 @@ func (p *app) run() error {
 			return fmt.Errorf("unable to unmarshal config text: %w", err)
 		}
 		for k, v := range c {
-			config.Notifiers[k] = v
+			p.configuration.Notifiers[k] = v
 		}
 	}
 
-	if len(config.IncludeMonitors) > 0 {
-		f, err := filepath.Abs(config.IncludeMonitors)
+	if len(p.configuration.IncludeMonitors) > 0 {
+		f, err := filepath.Abs(p.configuration.IncludeMonitors)
 		if err != nil {
 			return fmt.Errorf("unable to get filename: %s", err)
 		}
@@ -251,37 +251,37 @@ func (p *app) run() error {
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal config text: %v", err)
 		}
-		config.Monitors = append(config.Monitors, c...)
+		p.configuration.Monitors = append(p.configuration.Monitors, c...)
 	}
 
 	var wg sync.WaitGroup
 
-	if config.Metrics.Enable {
-		keys := lo.Keys(config.Metrics.ExtraLabels)
-		labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
-		p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "neko_probe_attempts_total",
-			Help: "",
-		}, labels)
-		p.metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "neko_probe_attempts_failed",
-			Help: "",
-		}, labels)
-		p.metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "neko_up",
-			Help: "",
-		}, labels)
-		p.metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Name: "neko_scrape_duration_nanoseconds",
-			Help: "",
-		}, labels)
+	keys := lo.Keys(p.configuration.Metrics.ExtraLabels)
+	labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
+	p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "neko_probe_attempts_total",
+		Help: "",
+	}, labels)
+	p.metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "neko_probe_attempts_failed",
+		Help: "",
+	}, labels)
+	p.metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "neko_up",
+		Help: "",
+	}, labels)
+	p.metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "neko_scrape_duration_nanoseconds",
+		Help: "",
+	}, labels)
 
+	if p.configuration.Metrics.Enable {
 		slog.Info("setting up metrics")
 
 		metricsServerMux := http.NewServeMux()
 		metricsServerMux.Handle("/metrics", promhttp.Handler())
 		metricsServer := http.Server{
-			Addr:    config.Metrics.ListenAddress,
+			Addr:    p.configuration.Metrics.ListenAddress,
 			Handler: metricsServerMux,
 		}
 
@@ -295,17 +295,17 @@ func (p *app) run() error {
 		}()
 	}
 
-	clusterConfig := config.Cluster
+	clusterConfig := p.configuration.Cluster
 	if clusterConfig.Enable {
 		slog.Info("setting up cluster")
 
 		memberlistCfg := memberlist.DefaultWANConfig()
-		memberlistCfg.Name = config.Instance
+		memberlistCfg.Name = p.configuration.Instance
 
 		serfCh := make(chan serf.Event, 16)
 
 		serfCfg := serf.DefaultConfig()
-		serfCfg.NodeName = config.Instance
+		serfCfg.NodeName = p.configuration.Instance
 		serfCfg.EventCh = serfCh
 		serfCfg.MemberlistConfig = memberlistCfg
 		serfCfg.LogOutput = os.Stdout
@@ -326,7 +326,7 @@ func (p *app) run() error {
 	}
 
 	notifiers := map[string]notifier.Notifier{}
-	for k, v := range config.Notifiers {
+	for k, v := range p.configuration.Notifiers {
 		slog.Info("setting up notifier", slog.String("name", k))
 
 		n, err := createNotifier(&v)
@@ -338,7 +338,7 @@ func (p *app) run() error {
 	}
 
 	monitors := []Monitor{}
-	for _, m := range config.Monitors {
+	for _, m := range p.configuration.Monitors {
 		slog.Info("setting up monitor", slog.String("name", m.Name))
 		p, err := createProbe(&m.Probe)
 		if err != nil {
@@ -389,8 +389,8 @@ func (p *app) run() error {
 					context, cancel := context.WithTimeout(rootContext, monitor.Configuration.Probe.Timeout)
 					defer cancel()
 
-					extraLabels := lo.Values(config.Metrics.ExtraLabels)
-					if err := p.runMonitor(extraLabels, &monitor, context, &lastTransition, config.Instance); err != nil {
+					extraLabels := lo.Values(p.configuration.Metrics.ExtraLabels)
+					if err := p.runMonitor(extraLabels, &monitor, context, &lastTransition, p.configuration.Instance); err != nil {
 						return
 					}
 				}()

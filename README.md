@@ -260,7 +260,7 @@ or if the application uses HTTP over Unix sockets
 type: http
 config:
   socketPath: /run/myapp/myapp.sock
-  address: https://unix/livez
+  address: http://unix/livez
   maxRedirects: 1
 ```
 

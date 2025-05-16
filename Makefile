@@ -7,9 +7,15 @@ GOARCH := $(shell go env GOARCH)
 
 DOCKER_BUILD_PLATFORMS ?= linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 ifeq ($(GOOS), windows)
-BIN_SUFFIX = .exe
+BIN_SUFFIX := .exe
 endif
 BIN_NAME := neko$(BIN_SUFFIX)
+
+VERSION := $(shell git describe --tags --abbrev=0)
+COMMIT := $(shell git rev-parse --short HEAD)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
+LDFLAGS := -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.BuildTime=$(BUILD_TIME)'
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
@@ -17,12 +23,18 @@ export DOCKER_CLI_EXPERIMENTAL=enabled
 default: binary
 
 test:
-	go test ./...
+	$(GO) test ./...
 
 binary:
-	CGO_ENABLED=0 go build \
-	  -o ./dist/${GOOS}/${GOARCH}/${BIN_NAME} \
+	CGO_ENABLED=0 $(GO) build \
+	  -ldflags "$(LDFLAGS)" \
+	  -o ./dist/$(GOOS)/$(GOARCH)/$(BIN_NAME) \
 	  ./cmd/neko
+
+run:
+	$(GO) run \
+		-ldflags "$(LDFLAGS)" \
+		./...
 
 binary-linux-386: export GOOS := linux
 binary-linux-386: export GOARCH := 386
@@ -60,4 +72,9 @@ publish-docker-multiarch-image:
 	$(MAKE) docker-latest
 
 docker-%:
-	docker buildx build $(DOCKER_BUILDX_ARGS) -t $(IMAGE):$* --platform $(DOCKER_BUILD_PLATFORMS) -f Dockerfile .
+	docker buildx build $(DOCKER_BUILDX_ARGS) \
+		-t $(IMAGE):$* \
+		--platform $(DOCKER_BUILD_PLATFORMS) \
+		--build-arg LDFLAGS "$(LDFLAGS)" \
+		-f Dockerfile \
+		.

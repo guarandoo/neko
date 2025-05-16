@@ -427,6 +427,8 @@ func (p *app) run() error {
 }
 
 func main() {
+	slog.Info("starting neko", slog.String("version", Version), slog.String("commit", Commit), slog.String("build_time", BuildTime))
+
 	app := newApp()
 	err := app.run()
 	if err != nil {

@@ -286,24 +286,6 @@ config:
 
 #### SQL
 
-#### Domain
-
-```yaml
-type: domain
-config:
-  domain: https://example.com
-```
-
-| Key      | Required | Description |
-| -------- | -------- | ----------- |
-| `domain` | Yes      |             |
-
-##### Extras
-
-| Key         | Value                       |
-| ----------- | --------------------------- |
-| `remaining` | Amount of time until expiry |
-
 #### DNS
 
 Test DNS resolution capability, the probe succeeds if there is at least 1 record of the specified type returned for the target.
@@ -328,6 +310,24 @@ config:
 | `recordType` | No       | Host    | Must be one of `Host` (A/AAAA), `NS` or `MX` |
 
 > ❕ It is recommended that `target` be a stably resolvable domain otherwise this probe may produce false-positives.
+
+#### Domain
+
+```yaml
+type: domain
+config:
+  domain: https://example.com
+```
+
+| Key      | Required | Description |
+| -------- | -------- | ----------- |
+| `domain` | Yes      |             |
+
+##### Extras
+
+| Key         | Value                       |
+| ----------- | --------------------------- |
+| `remaining` | Amount of time until expiry |
 
 ## Metrics
 

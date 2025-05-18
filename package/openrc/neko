@@ -9,11 +9,10 @@ supervisor=supervise-daemon
 command="/usr/bin/neko"
 command_args="$ARGS"
 command_background="yes"
-capabilities="^cap_net_raw"
+capabilities="cap_net_raw=ep"
 
 start_stop_daemon_args="--stdout /var/log/${SVCNAME}/${SVCNAME}.log \
     --stderr /var/log/${SVCNAME}/${SVCNAME}.log"                 
-
 
 depend() {
     need net
@@ -23,4 +22,6 @@ depend() {
 start_pre() {
     checkpath --directory --owner $command_user:$command_user --mode 0755 \
         /var/log/$RC_SVCNAME
+
+    setcap $capabilities $command
 }

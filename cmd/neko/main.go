@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -84,7 +83,7 @@ func (p *app) runMonitor(extraLabels []string, monitor *Monitor, context context
 		p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
 		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 	}
-	slog.Info("probe completed", slog.String("name", monitor.Name), slog.Any("results", res.Tests))
+	log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
 
 	p.metricsScrapeDuration.WithLabelValues(labels...).Observe(float64(duration.Nanoseconds()))
 
@@ -139,7 +138,7 @@ func (p *app) runMonitor(extraLabels []string, monitor *Monitor, context context
 
 			for _, n := range monitor.Notifiers {
 				if err := n.Notify(monitor.Name, data); err != nil {
-					slog.Error("unable to notify", slog.Any("error", err))
+					log.Printf("unable to notify: %s", err)
 				}
 			}
 		}
@@ -155,7 +154,7 @@ func loadConfiguration(path string) (*Configuration, error) {
 		return nil, fmt.Errorf("unable to get filename: %s", err)
 	}
 
-	slog.Info("loading configuration file", slog.String("filename", filename))
+	log.Printf("loading configuration file from: %s", filename)
 
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("config file does not exist: %s", err)
@@ -196,9 +195,9 @@ func (p *app) run() error {
 	for _, cfgPath := range cfgPaths {
 		config, err := loadConfiguration(cfgPath)
 		if err != nil {
-			slog.Info("unable to load configuration from", slog.String("path", cfgPath), slog.Any("error", err))
+			log.Printf("unable to load configuration from %v: %v", cfgPath, err)
 		} else {
-			slog.Info("successfully loaded configuration", slog.String("path", cfgPath))
+			log.Printf("successfully loaded configuration from: %v", cfgPath)
 			p.configuration = config
 			break
 		}
@@ -276,7 +275,7 @@ func (p *app) run() error {
 	}, labels)
 
 	if p.configuration.Metrics.Enable {
-		slog.Info("setting up metrics")
+		log.Print("setting up metrics")
 
 		metricsServerMux := http.NewServeMux()
 		metricsServerMux.Handle("/metrics", promhttp.Handler())
@@ -289,15 +288,14 @@ func (p *app) run() error {
 		go func() {
 			defer wg.Done()
 			if err := metricsServer.ListenAndServe(); err != nil {
-				slog.Error("unable to start metrics server", slog.Any("error", err))
-				os.Exit(1)
+				log.Fatalf("unable to start metrics server: %v", err)
 			}
 		}()
 	}
 
 	clusterConfig := p.configuration.Cluster
 	if clusterConfig.Enable {
-		slog.Info("setting up cluster")
+		log.Print("setting up cluster")
 
 		memberlistCfg := memberlist.DefaultWANConfig()
 		memberlistCfg.Name = p.configuration.Instance
@@ -312,22 +310,20 @@ func (p *app) run() error {
 
 		s, err := serf.Create(serfCfg)
 		if err != nil {
-			slog.Error("failed to create serf: %v", slog.Any("error", err))
-			os.Exit(1)
+			log.Fatalf("failed to create serf: %v", err)
 		}
 
 		if len(clusterConfig.Join) > 0 {
 			_, err = s.Join(clusterConfig.Join, false)
 			if err != nil {
-				slog.Error("unable to join cluster", slog.Any("error", err))
-				os.Exit(1)
+				log.Fatalf("unable to join cluster: %v", err)
 			}
 		}
 	}
 
 	notifiers := map[string]notifier.Notifier{}
 	for k, v := range p.configuration.Notifiers {
-		slog.Info("setting up notifier", slog.String("name", k))
+		log.Printf("setting up notifier %s", k)
 
 		n, err := createNotifier(&v)
 		if err != nil {
@@ -339,7 +335,7 @@ func (p *app) run() error {
 
 	monitors := []Monitor{}
 	for _, m := range p.configuration.Monitors {
-		slog.Info("setting up monitor", slog.String("name", m.Name))
+		log.Printf("setting up monitor %s", m.Name)
 		p, err := createProbe(&m.Probe)
 		if err != nil {
 			log.Fatalf("unable to create probe: %s", err)
@@ -374,7 +370,7 @@ func (p *app) run() error {
 			lastTransition := time.Now()
 
 			ticker := time.NewTicker(interval)
-			slog.Info("starting monitor", slog.String("name", monitor.Name))
+			log.Printf("starting monitor %s", monitor.Name)
 
 		outer:
 			for {
@@ -383,7 +379,7 @@ func (p *app) run() error {
 				case <-rootContext.Done():
 					break outer
 				}
-				slog.Info("running monitor", slog.String("name", monitor.Name))
+				log.Printf("running monitor %v", monitor.Name)
 
 				func() {
 					context, cancel := context.WithTimeout(rootContext, monitor.Configuration.Probe.Timeout)
@@ -395,7 +391,7 @@ func (p *app) run() error {
 					}
 				}()
 			}
-			slog.Info("stopping monitor", slog.String("name", monitor.Name))
+			log.Printf("stopping monitor %s", monitor.Name)
 		}(m)
 	}
 
@@ -427,7 +423,7 @@ func (p *app) run() error {
 }
 
 func main() {
-	slog.Info("starting neko", slog.String("version", Version), slog.String("commit", Commit), slog.String("build_time", BuildTime))
+	log.Printf("starting neko %v %v %v", Version, Commit, BuildTime)
 
 	app := newApp()
 	err := app.run()

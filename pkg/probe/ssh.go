@@ -76,6 +76,11 @@ func (p *sshProbe) Probe(ctx context.Context, instance string, monitor string) (
 	return &core.Result{Tests: tests}, nil
 }
 
+const (
+	SshPasswordAuth = "password"
+	SshPubKeyAuth   = "pubkey"
+)
+
 type SshProbePasswordAuthMethodOptions struct {
 	Password string
 }
@@ -103,13 +108,13 @@ func NewSshProbe(options SshProbeOptions) (Probe, error) {
 	var hostKeyCallback ssh.HostKeyCallback
 
 	if len(options.HostKey) > 0 {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	} else {
 		publicKey, err := ssh.ParsePublicKey([]byte(options.HostKey))
 		if err != nil {
 			return nil, fmt.Errorf("unable to create ssh probe: %w", err)
 		}
 		hostKeyCallback = ssh.FixedHostKey(publicKey)
+	} else {
+		hostKeyCallback = ssh.InsecureIgnoreHostKey()
 	}
 
 	var authMethod ssh.AuthMethod

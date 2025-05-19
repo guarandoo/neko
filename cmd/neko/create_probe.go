@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/guarandoo/neko/pkg/probe"
@@ -48,11 +49,28 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		}
 
 	case SshProbeTypeConfig:
+		var auth any
+		if c, ok := v.Authentication.Configuration.(SshProbeTypePasswordAuthConfig); ok {
+			auth = probe.SshProbePasswordAuthMethodOptions{
+				Password: c.Password,
+			}
+		} else if c, ok := v.Authentication.Configuration.(SshProbeTypePubkeyAuthConfig); ok {
+			auth = probe.SshProbeKeyAuthMethodOptions{
+				PrivateKey: []byte(c.PrivKey),
+			}
+		} else {
+			return nil, errors.New("unknown ssh authentication type")
+		}
+
 		p, err = probe.NewSshProbe(probe.SshProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},
 			Host:         v.Host,
 			Port:         v.Port,
 			HostKey:      v.HostKey,
+			Authentication: probe.SshProbeAuthOptions{
+				User:   v.Authentication.User,
+				Method: auth,
+			},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

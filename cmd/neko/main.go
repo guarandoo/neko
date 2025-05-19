@@ -8,8 +8,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -69,6 +71,10 @@ func (p *app) createRaft() error {
 		return err
 	}
 
+	return nil
+}
+
+func (p *app) reload() error {
 	return nil
 }
 
@@ -259,11 +265,11 @@ func (p *app) run() error {
 	labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
 	p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "neko_probe_attempts_total",
-		Help: "",
+		Help: "Total number of probe attempts.",
 	}, labels)
 	p.metricsProbeAttemptsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "neko_probe_attempts_failed",
-		Help: "",
+		Help: "Number of probe attempts that failed.",
 	}, labels)
 	p.metricsUp = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "neko_up",
@@ -271,7 +277,7 @@ func (p *app) run() error {
 	}, labels)
 	p.metricsScrapeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "neko_scrape_duration_nanoseconds",
-		Help: "",
+		Help: "The amount of time the probe took.",
 	}, labels)
 
 	if p.configuration.Metrics.Enable {
@@ -412,14 +418,7 @@ func (p *app) run() error {
 	log.Println("initialization complete, releasing monitors")
 	start.Set()
 
-	ticker := time.NewTicker(3 * time.Second)
-	ch := make(chan int)
-	for {
-		select {
-		case <-ch:
-		case <-ticker.C:
-		}
-	}
+	return nil
 }
 
 func main() {
@@ -429,5 +428,26 @@ func main() {
 	err := app.run()
 	if err != nil {
 		log.Fatalf("unable to run application: %v", err)
+	}
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan)
+
+consumer:
+	for {
+		sig := <-sigChan
+		switch sig {
+		case syscall.SIGINT:
+			fallthrough
+		case syscall.SIGTERM:
+			fallthrough
+		case syscall.SIGQUIT:
+			log.Printf("received signal: %v", sig)
+			break consumer
+
+		case syscall.SIGHUP:
+			log.Printf("received signal: %v", sig)
+			app.reload()
+		}
 	}
 }

@@ -41,13 +41,21 @@ notifiers:
 monitors:
   - name: ssh-monitor
     interval: 1m
+    # retry:
+    #   maxAttempts: 5
+    #   interval: 15s
     probe:
       type: ssh
       config:
         host: some-machine.example.com
+        auth:
+          user: root
+          type: password
+          config:
+            password: super-secret-password
     notifiers:
-      - my_discord_notifier
-      - my_smtp_notifier
+      - name: my_discord_notifier
+      - name: my_smtp_notifier
   - name: ping-monitor
     interval: 1m
     probe:
@@ -55,8 +63,8 @@ monitors:
       config:
         address: some-machine.example.com
     notifiers:
-      - my_discord_notifier
-      - my_smtp_notifier
+      - name: my_discord_notifier
+      - name: my_smtp_notifier
   - name: http-monitor
     interval: 1m
     probe:
@@ -65,17 +73,17 @@ monitors:
         address: https://example.com
         maxRedirects: 1
     notifiers:
-      - my_discord_notifier
-      - my_smtp_notifier
+      - name: my_discord_notifier
+      - name: my_smtp_notifier
   - name: domain-monitor
-    interval: 1d
+    interval: 24h
     probe:
       type: domain
       config:
         domain: https://example.com
     notifiers:
-      - my_discord_notifier
-      - my_smtp_notifier
+      - name: my_discord_notifier
+      - name: my_smtp_notifier
   - name: inverted-ping-monitor
     interval: 1m
     invert: true
@@ -84,5 +92,5 @@ monitors:
       config:
         address: host-that-is-normally-unreachable.example.com
     notifiers:
-      - my_discord_notifier
-      - my_smtp_notifier
+      - name: my_discord_notifier
+      - name: my_smtp_notifier

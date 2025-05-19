@@ -78,48 +78,70 @@ func (p *app) reload() error {
 	return nil
 }
 
-func (p *app) runMonitor(extraLabels []string, monitor *Monitor, context context.Context, lastTransition *time.Time, instance string) error {
+func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monitor *Monitor, lastTransition *time.Time, instance string) error {
 	labels := lo.Union([]string{instance, monitor.Name, monitor.Configuration.Probe.Type}, extraLabels)
-	p.metricsProbeAttempts.WithLabelValues(labels...).Add(1.0)
-	start := time.Now()
 
-	res, err := monitor.Probe.Probe(context, instance, monitor.Name)
-	duration := time.Since(start)
-	if err != nil {
-		p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
-		return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
-	}
-	log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
-
-	p.metricsScrapeDuration.WithLabelValues(labels...).Observe(float64(duration.Nanoseconds()))
-
-	if len(res.Tests) == 0 {
-		return nil
-	}
-
-	// calculate new state
 	previousStatus := monitor.Status
 	var status core.Status
-	testCount := len(res.Tests)
-	if testCount == 1 {
-		status = res.Tests[0].Status
-	} else {
-		status = core.StatusDown
-		count := lo.CountBy(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
-		if monitor.Configuration.ConsiderAllTests && count == testCount {
-			status = core.StatusUp
-		} else if !monitor.Configuration.ConsiderAllTests && count > 0 {
-			status = core.StatusUp
-		}
-	}
 
-	if monitor.Configuration.Invert {
-		switch status {
-		case core.StatusUp:
-			status = core.StatusDown
-		case core.StatusDown:
-			status = core.StatusUp
+	attempts := 0
+	for {
+		p.metricsProbeAttempts.WithLabelValues(labels...).Add(1.0)
+		start := time.Now()
+
+		ctx, cancel := context.WithTimeout(parentCtx, monitor.Configuration.Probe.Timeout)
+		defer cancel()
+
+		res, err := monitor.Probe.Probe(ctx, instance, monitor.Name)
+		duration := time.Since(start)
+		if err != nil {
+			p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
+			return fmt.Errorf("monitor %v failed: %s", monitor.Name, err)
 		}
+
+		log.Printf("probe %v completed with result: %v", monitor.Name, res.Tests)
+
+		p.metricsScrapeDuration.WithLabelValues(labels...).Observe(float64(duration.Nanoseconds()))
+
+		if len(res.Tests) == 0 {
+			return nil
+		}
+
+		// calculate new state
+		testCount := len(res.Tests)
+		if testCount == 1 {
+			status = res.Tests[0].Status
+		} else {
+			status = core.StatusDown
+			count := lo.CountBy(res.Tests, func(test core.Test) bool { return test.Status == core.StatusUp })
+			if monitor.Configuration.ConsiderAllTests && count == testCount {
+				status = core.StatusUp
+			} else if !monitor.Configuration.ConsiderAllTests && count > 0 {
+				status = core.StatusUp
+			}
+		}
+
+		if monitor.Configuration.Invert {
+			switch status {
+			case core.StatusUp:
+				status = core.StatusDown
+			case core.StatusDown:
+				status = core.StatusUp
+			}
+		}
+
+		attempts += 1
+
+		if status != core.StatusDown {
+			break
+		}
+
+		if attempts > monitor.Configuration.Retry.MaxAttempts {
+			break
+		}
+
+		log.Printf("monitor %v failed, retrying after %v %v/%v", monitor.Name, monitor.Configuration.Retry.Interval, attempts, monitor.Configuration.Retry.MaxAttempts)
+		time.Sleep(monitor.Configuration.Retry.Interval)
 	}
 
 	monitor.Status = status
@@ -388,11 +410,8 @@ func (p *app) run() error {
 				log.Printf("running monitor %v", monitor.Name)
 
 				func() {
-					context, cancel := context.WithTimeout(rootContext, monitor.Configuration.Probe.Timeout)
-					defer cancel()
-
 					extraLabels := lo.Values(p.configuration.Metrics.ExtraLabels)
-					if err := p.runMonitor(extraLabels, &monitor, context, &lastTransition, p.configuration.Instance); err != nil {
+					if err := p.runMonitor(rootContext, extraLabels, &monitor, &lastTransition, p.configuration.Instance); err != nil {
 						return
 					}
 				}()

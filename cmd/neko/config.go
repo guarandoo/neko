@@ -12,7 +12,7 @@ import (
 
 const (
 	EnvPrefix                      = "NEKO_"
-	DefaultNotifierTitleTemplate = "Monitor Status Change"
+	DefaultNotifierTitleTemplate   = "Monitor Status Change"
 	DefaultNotifierMessageTemplate = "{{.Name}} is now {{.Status}}, was {{.PreviousStatus}} for {{.Duration}}"
 )
 
@@ -219,11 +219,70 @@ func (t *HttpProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 // endregion
 
 // region sshprobetype
+type SshProbeTypePasswordAuthConfig struct {
+	Password string `yaml:"password"`
+}
+
+type SshProbeTypePubkeyAuthConfig struct {
+	PrivKey string `yaml:"privkey"`
+}
+
+type SshProbeTypeAuthConfig struct {
+	User          string `yaml:"user"`
+	Type          string `yaml:"type"`
+	Configuration any    `yaml:"config"`
+}
+
+func (t *SshProbeTypeAuthConfig) UnmarshalYAML(n *yaml.Node) error {
+	{
+		var c struct {
+			User string `yaml:"user"`
+			Type string `yaml:"type"`
+		}
+		err := n.Decode(&c)
+		if err != nil {
+			return fmt.Errorf("unable to unmarshal config: %w", err)
+		}
+		t.User = c.User
+		t.Type = c.Type
+	}
+
+	switch t.Type {
+	case probe.SshPasswordAuth:
+		type rt struct {
+			Config SshProbeTypePasswordAuthConfig `yaml:"config"`
+		}
+		c := rt{}
+		err := n.Decode(&c)
+		if err != nil {
+			return err
+		}
+		t.Configuration = c.Config
+
+	case probe.SshPubKeyAuth:
+		type rt struct {
+			Config SshProbeTypePubkeyAuthConfig `yaml:"config"`
+		}
+		c := rt{}
+		err := n.Decode(&c)
+		if err != nil {
+			return err
+		}
+		t.Configuration = c.Config
+
+	default:
+		return fmt.Errorf("unknown probe type: %s", t.Type)
+	}
+
+	return nil
+}
+
 type SshProbeTypeConfig struct {
 	ProbeTypeConfig
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	HostKey string `yaml:"hostKey"`
+	Host           string                 `yaml:"host"`
+	Port           int                    `yaml:"port"`
+	HostKey        string                 `yaml:"hostKey"`
+	Authentication SshProbeTypeAuthConfig `yaml:"auth"`
 }
 
 func (t *SshProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
@@ -411,7 +470,14 @@ type ProbeNotifierConfig struct {
 
 // endregion
 
+// endregion
+
 // region monitor
+type RetryConfiguration struct {
+	MaxAttempts int           `yaml:"maxAttempts"`
+	Interval    time.Duration `yaml:"interval"`
+}
+
 type MonitorConfig struct {
 	Name             string                `yaml:"name"`
 	Interval         string                `yaml:"interval"`
@@ -419,12 +485,17 @@ type MonitorConfig struct {
 	Notifiers        []ProbeNotifierConfig `yaml:"notifiers"`
 	ConsiderAllTests bool                  `yaml:"considerAllTests"`
 	Invert           bool                  `yaml:"invert"`
+	Retry            RetryConfiguration    `yaml:"retry"`
 }
 
 func (t *MonitorConfig) UnmarshalYAML(n *yaml.Node) error {
 	type rt MonitorConfig
 	value := rt{
 		Interval: "1m",
+		Retry: RetryConfiguration{
+			MaxAttempts: 3,
+			Interval:    time.Second * 10,
+		},
 	}
 	if err := n.Decode(&value); err != nil {
 		return err
@@ -533,7 +604,5 @@ func (c *Configuration) Validate() error {
 	}
 	return nil
 }
-
-// endregion
 
 // endregion

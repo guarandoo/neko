@@ -19,7 +19,7 @@ import (
 )
 
 func generateKeyPair() (key *rsa.PrivateKey, err error) {
-	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+	pk, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate private key: %w", err)
 	}
@@ -34,11 +34,6 @@ func TestSsh(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initiate ssh listener: %v", err)
 	}
-	defer func() {
-		if err := listener.Close(); err != nil {
-			t.Fatalf("unable to close listener: %v", err)
-		}
-	}()
 
 	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
@@ -99,11 +94,11 @@ func TestSsh(t *testing.T) {
 		t.Fatalf("unable to create ssh probe: %v", err)
 	}
 
-	ctx, cancel := getContextWithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := getContextWithTimeout(t.Context(), time.Second*30)
 	defer cancel()
 
 	res, err := probe.Probe(ctx, "", "")
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(t.Context()); err != nil {
 		t.Fatalf("unable to shutdown ssh server: %v", err)
 	}
 	wg.Wait()
@@ -129,11 +124,6 @@ func TestSshAuthFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initiate ssh listener: %v", err)
 	}
-	defer func() {
-		if err := listener.Close(); err != nil {
-			t.Fatalf("unable to close listener: %v", err)
-		}
-	}()
 
 	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {

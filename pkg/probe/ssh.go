@@ -34,13 +34,14 @@ func connectAndAuthenticate(ctx context.Context, host string, config *ssh.Client
 	if err != nil {
 		return err
 	}
-	defer func() { err = con.Close() }()
 
 	sshCon, _, _, err := ssh.NewClientConn(con, host, config)
 	if err != nil {
 		return err
 	}
-	defer func() { err = sshCon.Close() }()
+	defer func() {
+		err = sshCon.Close()
+	}()
 
 	return
 }

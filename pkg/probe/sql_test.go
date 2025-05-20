@@ -11,23 +11,19 @@ import (
 
 func TestSqlProbe(t *testing.T) {
 	driver := "sqlmock"
-	dsn := "test"
+	dsn := "TestSqlProbe"
 
-	db, mock, err := sqlmock.NewWithDSN(dsn)
+	_, mock, err := sqlmock.NewWithDSN(dsn)
 	if err != nil {
 		t.Fatalf("unable to create sql mock: %v", err)
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatalf("unable to close database: %v", err)
-		}
-	}()
 
 	rowsMock := sqlmock.NewRows([]string{"value"})
 	rowsMock.AddRow(1)
 
 	query := "SELECT 1"
 	mock.ExpectQuery(query).WillReturnRows(rowsMock)
+	mock.ExpectClose()
 
 	probe, err := NewSqlProbe(SqlProbeOptions{
 		ProbeOptions: ProbeOptions{},
@@ -59,23 +55,19 @@ func TestSqlProbe(t *testing.T) {
 
 func TestSqlProbeFail(t *testing.T) {
 	driver := "sqlmock"
-	dsn := "test"
+	dsn := "TestSqlProbeFail"
 
-	db, mock, err := sqlmock.NewWithDSN(dsn)
+	_, mock, err := sqlmock.NewWithDSN(dsn)
 	if err != nil {
 		t.Fatalf("unable to create sql mock: %v", err)
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatalf("unable to close database: %v", err)
-		}
-	}()
 
 	rowsMock := sqlmock.NewRows([]string{"value"})
 	rowsMock.AddRow(0)
 
 	query := "SELECT 0"
 	mock.ExpectQuery(query).WillReturnRows(rowsMock)
+	mock.ExpectClose()
 
 	probe, err := NewSqlProbe(SqlProbeOptions{
 		ProbeOptions: ProbeOptions{},

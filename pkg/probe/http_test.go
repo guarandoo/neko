@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -62,13 +61,13 @@ func TestHttpProbeUnixSocket(t *testing.T) {
 	server := &http.Server{
 		Handler: handler,
 	}
-	defer (func() {
-		server.Close()
-		listener.Close()
-		os.Remove(socketPath)
-	})()
+	defer func() {
+		if err := server.Close(); err != nil {
+			t.Fatalf("unable to close server: %v", err)
+		}
+	}()
 
-	go server.Serve(listener)
+	go func() { _ = server.Serve(listener) }()
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
 		SocketPath:         socketPath,

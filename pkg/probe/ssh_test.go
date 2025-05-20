@@ -34,7 +34,11 @@ func TestSsh(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initiate ssh listener: %v", err)
 	}
-	defer listener.Close()
+	defer func() {
+		if err := listener.Close(); err != nil {
+			t.Fatalf("unable to close listener: %v", err)
+		}
+	}()
 
 	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
@@ -50,7 +54,14 @@ func TestSsh(t *testing.T) {
 	server := sshTest.Server{
 		Addr: fmt.Sprintf("%v:%v", tcpAddr.IP, tcpAddr.Port),
 		Handler: func(s sshTest.Session) {
-			io.WriteString(s, "Test!")
+			value := "Test!"
+			cnt, err := io.WriteString(s, value)
+			if err != nil {
+				t.Fatalf("unable to write response: %v", err)
+			}
+			if cnt != len(value) {
+				t.Fatalf("unexpected number of bytes written, expected %v wrote %v", len(value), cnt)
+			}
 		},
 		PublicKeyHandler: func(ctx sshTest.Context, pubkey sshTest.PublicKey) bool {
 			expectedPublicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
@@ -67,7 +78,7 @@ func TestSsh(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		server.Serve(listener)
+		_ = server.Serve(listener)
 	}()
 
 	privDer := x509.MarshalPKCS1PrivateKey(privateKey)
@@ -118,7 +129,11 @@ func TestSshAuthFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initiate ssh listener: %v", err)
 	}
-	defer listener.Close()
+	defer func() {
+		if err := listener.Close(); err != nil {
+			t.Fatalf("unable to close listener: %v", err)
+		}
+	}()
 
 	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
@@ -134,7 +149,14 @@ func TestSshAuthFail(t *testing.T) {
 	server := sshTest.Server{
 		Addr: fmt.Sprintf("%v:%v", tcpAddr.IP, tcpAddr.Port),
 		Handler: func(s sshTest.Session) {
-			io.WriteString(s, "Test!")
+			value := "Test!"
+			cnt, err := io.WriteString(s, value)
+			if err != nil {
+				t.Fatalf("unable to write response: %v", err)
+			}
+			if cnt != len(value) {
+				t.Fatalf("unexpected number of bytes written, expected %v wrote %v", len(value), cnt)
+			}
 		},
 		PublicKeyHandler: func(ctx sshTest.Context, pubkey sshTest.PublicKey) bool {
 			expectedPublicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
@@ -151,7 +173,7 @@ func TestSshAuthFail(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		server.Serve(listener)
+		_ = server.Serve(listener)
 	}()
 
 	testPrivKey, err := generateKeyPair()

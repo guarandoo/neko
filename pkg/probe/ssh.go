@@ -28,21 +28,21 @@ type sshProbe struct {
 	authMethods     []ssh.AuthMethod
 }
 
-func connectAndAuthenticate(ctx context.Context, host string, config *ssh.ClientConfig) error {
+func connectAndAuthenticate(ctx context.Context, host string, config *ssh.ClientConfig) (err error) {
 	dialer := net.Dialer{}
 	con, err := dialer.DialContext(ctx, "tcp", host)
 	if err != nil {
 		return err
 	}
-	defer con.Close()
+	defer func() { err = con.Close() }()
 
 	sshCon, _, _, err := ssh.NewClientConn(con, host, config)
 	if err != nil {
 		return err
 	}
-	defer sshCon.Close()
+	defer func() { err = sshCon.Close() }()
 
-	return nil
+	return
 }
 
 func (p *sshProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {

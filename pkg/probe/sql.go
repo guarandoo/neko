@@ -36,7 +36,7 @@ func (p *sqlProbe) Probe(ctx context.Context, instance string, monitor string) (
 	if err != nil {
 		return &core.Result{Tests: []core.Test{}}, nil
 	}
-	defer con.Close()
+	defer func() { _ = con.Close() }()
 
 	res := con.QueryRowContext(ctx, p.query)
 	var val *int

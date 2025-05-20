@@ -17,7 +17,11 @@ func TestSqlProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create sql mock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("unable to close database: %v", err)
+		}
+	}()
 
 	rowsMock := sqlmock.NewRows([]string{"value"})
 	rowsMock.AddRow(1)
@@ -61,7 +65,11 @@ func TestSqlProbeFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create sql mock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("unable to close database: %v", err)
+		}
+	}()
 
 	rowsMock := sqlmock.NewRows([]string{"value"})
 	rowsMock.AddRow(0)

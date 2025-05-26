@@ -537,17 +537,29 @@ type MemberlistConfiguration struct {
 }
 
 func (t *MemberlistConfiguration) UnmarshalYAML(n *yaml.Node) error {
-	type rt MemberlistConfiguration
+	type rt struct {
+		BindAddress      string  `yaml:"bindAddress"`
+		BindPort         int     `yaml:"bindPort"`
+		AdvertiseAddress *string `yaml:"advertiseAddress"`
+		AdvertisePort    *int    `yaml:"advertisePort"`
+	}
 	value := rt{
-		BindAddress:      "0.0.0.0",
-		BindPort:         7946,
-		AdvertiseAddress: "0.0.0.0",
-		AdvertisePort:    7946,
+		BindAddress: "0.0.0.0",
+		BindPort:    7946,
 	}
 	if err := n.Decode(&value); err != nil {
 		return err
 	}
-	*t = MemberlistConfiguration(value)
+	if value.AdvertiseAddress == nil {
+		value.AdvertiseAddress = &value.BindAddress
+		value.AdvertisePort = &value.BindPort
+	}
+	*t = MemberlistConfiguration(MemberlistConfiguration{
+		BindAddress:      value.BindAddress,
+		BindPort:         value.BindPort,
+		AdvertiseAddress: *value.AdvertiseAddress,
+		AdvertisePort:    *value.AdvertisePort,
+	})
 	return nil
 }
 

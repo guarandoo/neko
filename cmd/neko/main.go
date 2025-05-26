@@ -239,6 +239,8 @@ func (p *app) run() error {
 		return fmt.Errorf("config validation failed: %v", err)
 	}
 
+	log.Printf("running as instance: %v", p.configuration.Instance)
+
 	if len(p.configuration.IncludeNotifiers) > 0 {
 		f, err := filepath.Abs(p.configuration.IncludeNotifiers)
 		if err != nil {
@@ -327,6 +329,10 @@ func (p *app) run() error {
 
 		memberlistCfg := memberlist.DefaultWANConfig()
 		memberlistCfg.Name = p.configuration.Instance
+		memberlistCfg.BindAddr = p.configuration.Cluster.Memberlist.BindAddress
+		memberlistCfg.BindPort = p.configuration.Cluster.Memberlist.BindPort
+		memberlistCfg.AdvertisePort = p.configuration.Cluster.Memberlist.AdvertisePort
+		memberlistCfg.AdvertiseAddr = p.configuration.Cluster.Memberlist.AdvertiseAddress
 
 		serfCh := make(chan serf.Event, 16)
 

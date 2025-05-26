@@ -333,6 +333,8 @@ config:
 
 ### Prometheus
 
+![A Grafana status history panel showing uptime metrics from Neko](docs/01-prometheus.png)
+
 A Prometheus metrics endpoint is available at the address configured via `metrics.listenAddress` and exports the following metrics:
 
 | Metric                           | Description                               |

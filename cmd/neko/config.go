@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -618,3 +621,29 @@ func (c *Configuration) Validate() error {
 }
 
 // endregion
+
+func loadConfiguration(path string) (*Configuration, error) {
+	filename, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get filename: %s", err)
+	}
+
+	log.Printf("loading configuration file from: %s", filename)
+
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("config file does not exist: %s", err)
+	}
+
+	text, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read config file: %v", err)
+	}
+
+	var config Configuration
+	err = yaml.Unmarshal(text, &config)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal config text: %v", err)
+	}
+
+	return &config, nil
+}

@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"net/smtp"
@@ -11,19 +12,40 @@ import (
 type smtpNotifier struct {
 	host            string
 	port            int
-	auth            smtp.Auth
+	username        string
+	password        string
 	sender          string
 	recipients      []string
 	subjectTemplate *template.Template
 	bodyTemplate    *template.Template
 }
 
-func (n *smtpNotifier) Notify(name string, data map[string]any) error {
+func sendMail(ctx context.Context, addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+	errCh := make(chan error, 1)
+
+	go func() {
+		err := smtp.SendMail(addr, a, from, to, msg)
+		errCh <- err
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-errCh:
+		return err
+	}
+}
+
+func (n *smtpNotifier) Notify(ctx context.Context, name string, data map[string]any) error {
 	var subjectBuf bytes.Buffer
-	n.subjectTemplate.Execute(&subjectBuf, data)
+	if err := n.subjectTemplate.Execute(&subjectBuf, data); err != nil {
+		return err
+	}
 
 	var bodyBuf bytes.Buffer
-	n.bodyTemplate.Execute(&bodyBuf, data)
+	if err := n.bodyTemplate.Execute(&bodyBuf, data); err != nil {
+		return err
+	}
 
 	msg := ""
 	msg += fmt.Sprintf("From: %v\r\n", n.sender)
@@ -32,7 +54,8 @@ func (n *smtpNotifier) Notify(name string, data map[string]any) error {
 	msg += "\r\n"
 	msg += bodyBuf.String()
 	addr := fmt.Sprintf("%v:%v", n.host, n.port)
-	if err := smtp.SendMail(addr, n.auth, n.sender, n.recipients, []byte(msg)); err != nil {
+	auth := smtp.PlainAuth("", n.username, n.password, n.host)
+	if err := sendMail(ctx, addr, auth, n.sender, n.recipients, []byte(msg)); err != nil {
 		return err
 	}
 	return nil
@@ -60,11 +83,11 @@ func NewSmtpNotifier(options SmtpNotifierOptions) (Notifier, error) {
 		return nil, fmt.Errorf("unable to parse body template: %w", err)
 	}
 
-	auth := smtp.PlainAuth("", options.Username, options.Password, options.Host)
 	return &smtpNotifier{
 		host:            options.Host,
 		port:            options.Port,
-		auth:            auth,
+		username:        options.Username,
+		password:        options.Password,
 		sender:          options.Sender,
 		recipients:      options.Recipients,
 		subjectTemplate: subjectTemplate,

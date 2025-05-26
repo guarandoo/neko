@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,12 +17,16 @@ type gotifyNotifier struct {
 	messageTemplate *template.Template
 }
 
-func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
+func (n *gotifyNotifier) Notify(ctx context.Context, name string, data map[string]any) error {
 	var titleBuf bytes.Buffer
-	n.titleTemplate.Execute(&titleBuf, data)
+	if err := n.titleTemplate.Execute(&titleBuf, data); err != nil {
+		return err
+	}
 
 	var messageBuf bytes.Buffer
-	n.messageTemplate.Execute(&messageBuf, data)
+	if err := n.messageTemplate.Execute(&messageBuf, data); err != nil {
+		return err
+	}
 
 	body := map[string]any{
 		"message":  messageBuf.String(),
@@ -37,7 +42,7 @@ func (n *gotifyNotifier) Notify(name string, data map[string]any) error {
 
 	buf := bytes.NewBuffer(payload)
 	url := fmt.Sprintf("%s%s", n.url, "/message")
-	req, err := http.NewRequest(http.MethodPost, url, buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 	if err != nil {
 		return fmt.Errorf("unable to create Gotify request: %w", err)
 	}

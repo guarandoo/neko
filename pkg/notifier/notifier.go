@@ -1,5 +1,7 @@
 package notifier
 
+import "context"
+
 type Notifier interface {
-	Notify(name string, data map[string]any) error
+	Notify(context.Context, string, map[string]any) error
 }

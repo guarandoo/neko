@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -60,7 +61,7 @@ func (n *discordWebhookNotifier) editMessage(messageId string, content string) (
 	return &j, nil
 }
 
-func sendMessage(url string, content string) (*discordWebhookReply, error) {
+func sendMessage(ctx context.Context, url string, content string) (*discordWebhookReply, error) {
 	body := map[string]any{
 		"content": content,
 	}
@@ -73,7 +74,14 @@ func sendMessage(url string, content string) (*discordWebhookReply, error) {
 	buf := bytes.NewBuffer(payload)
 
 	url = fmt.Sprintf("%s?wait=true", url)
-	res, err := http.Post(url, "application/json", buf)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to make Discord request: %w", err)
 	}
@@ -92,7 +100,7 @@ func sendMessage(url string, content string) (*discordWebhookReply, error) {
 	return &j, nil
 }
 
-func (n *discordWebhookNotifier) Notify(name string, data map[string]any) error {
+func (n *discordWebhookNotifier) Notify(ctx context.Context, name string, data map[string]any) error {
 	var msgBuf bytes.Buffer
 	if err := n.messageTemplate.Execute(&msgBuf, data); err != nil {
 		return err
@@ -115,14 +123,14 @@ func (n *discordWebhookNotifier) Notify(name string, data map[string]any) error 
 		if err == nil {
 			n.lastMessageId = &res.Id
 		} else {
-			res, err = sendMessage(n.url, message)
+			res, err = sendMessage(ctx, n.url, message)
 			if err != nil {
 				return err
 			}
 			n.lastMessageId = &res.Id
 		}
 	} else {
-		res, err := sendMessage(n.url, message)
+		res, err := sendMessage(ctx, n.url, message)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -17,7 +16,6 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 	"github.com/guarandoo/neko/pkg/notifier"
 	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/raft"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mxmauro/resetevent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,7 +25,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type app struct {
+type Application interface {
+	Run(context.Context) error
+	Reload() error
+}
+
+type application struct {
 	metricsProbeAttempts       *prometheus.CounterVec
 	metricsProbeAttemptsFailed *prometheus.CounterVec
 	metricsUp                  *prometheus.GaugeVec
@@ -37,44 +40,7 @@ type app struct {
 	configuration              *Configuration
 }
 
-func (p *app) createRaft() error {
-	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID("ASD")
-
-	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1")
-	if err != nil {
-		return fmt.Errorf("unable to resolve raft bind addr: %w", err)
-	}
-
-	transport, err := raft.NewTCPTransport("", addr, 3, 10*time.Second, os.Stderr)
-	if err != nil {
-		return fmt.Errorf("unable to create raft tcp transport: %w", err)
-	}
-
-	snapshots, err := raft.NewFileSnapshotStore("raft_dir", 10, os.Stderr)
-	if err != nil {
-		return fmt.Errorf("unable to create file snapshot store: %w", err)
-	}
-
-	var logStore raft.LogStore
-	var stableStore raft.StableStore
-
-	logStore = raft.NewInmemStore()
-	stableStore = raft.NewInmemStore()
-
-	ra, err := raft.NewRaft(config, nil, logStore, stableStore, snapshots, transport)
-	if err != nil {
-		return fmt.Errorf("unable to create raft: %w", err)
-	}
-
-	if ra == nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *app) reload() error {
+func (p *application) Reload() error {
 	oldConfig := p.configuration
 
 	newConfig, err := loadConfiguration(p.configurationFile)
@@ -105,7 +71,14 @@ func (p *app) reload() error {
 	return nil
 }
 
-func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monitor *Monitor, lastTransition *time.Time, instance string) error {
+func sleep(ctx context.Context, d time.Duration) {
+	select {
+	case <-time.After(d):
+	case <-ctx.Done():
+	}
+}
+
+func (p *application) runMonitor(ctx context.Context, extraLabels []string, monitor *Monitor, lastTransition *time.Time, instance string) error {
 	labels := lo.Union([]string{instance, monitor.Name, monitor.Configuration.Probe.Type}, extraLabels)
 
 	previousStatus := monitor.Status
@@ -116,10 +89,10 @@ func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monito
 		p.metricsProbeAttempts.WithLabelValues(labels...).Add(1.0)
 		start := time.Now()
 
-		ctx, cancel := context.WithTimeout(parentCtx, monitor.Configuration.Probe.Timeout)
-		defer cancel()
+		probeCtx, cancelProbeCtx := context.WithTimeout(ctx, monitor.Configuration.Probe.Timeout)
+		defer cancelProbeCtx()
 
-		res, err := monitor.Probe.Probe(ctx, instance, monitor.Name)
+		res, err := monitor.Probe.Probe(probeCtx, instance, monitor.Name)
 		duration := time.Since(start)
 		if err != nil {
 			p.metricsProbeAttemptsFailed.WithLabelValues(labels...).Add(1.0)
@@ -168,7 +141,7 @@ func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monito
 		}
 
 		log.Printf("monitor %v failed, retrying after %v %v/%v", monitor.Name, monitor.Configuration.Retry.Interval, attempts, monitor.Configuration.Retry.MaxAttempts)
-		time.Sleep(monitor.Configuration.Retry.Interval)
+		sleep(ctx, monitor.Configuration.Retry.Interval)
 	}
 
 	monitor.Status = status
@@ -192,7 +165,7 @@ func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monito
 			data["Duration"] = now.Sub(*lastTransition).Round(time.Second)
 
 			for _, n := range monitor.Notifiers {
-				if err := n.Notify(monitor.Name, data); err != nil {
+				if err := n.Notify(ctx, monitor.Name, data); err != nil {
 					log.Printf("unable to notify: %s", err)
 				}
 			}
@@ -203,39 +176,7 @@ func (p *app) runMonitor(parentCtx context.Context, extraLabels []string, monito
 	return nil
 }
 
-func loadConfiguration(path string) (*Configuration, error) {
-	filename, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get filename: %s", err)
-	}
-
-	log.Printf("loading configuration file from: %s", filename)
-
-	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("config file does not exist: %s", err)
-	}
-
-	text, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read config file: %v", err)
-	}
-
-	var config Configuration
-	err = yaml.Unmarshal(text, &config)
-	if err != nil {
-		return nil, fmt.Errorf("unable to unmarshal config text: %v", err)
-	}
-
-	return &config, nil
-}
-
-func newApp() *app {
-	instance := app{}
-
-	return &instance
-}
-
-func (p *app) run() error {
+func (p *application) Run(ctx context.Context) error {
 	start := resetevent.NewManualResetEvent()
 
 	cfgPaths := []string{}
@@ -401,8 +342,6 @@ func (p *app) run() error {
 		monitors = append(monitors, monitor)
 	}
 
-	rootContext, _ := context.WithCancel(context.Background())
-
 	// pool := pond.NewPool(config.ConcurrentTasks)
 
 	for _, m := range monitors {
@@ -426,14 +365,14 @@ func (p *app) run() error {
 			for {
 				select {
 				case <-ticker.C:
-				case <-rootContext.Done():
+				case <-ctx.Done():
 					break outer
 				}
 				log.Printf("running monitor %v", monitor.Name)
 
 				func() {
 					extraLabels := lo.Values(p.configuration.Metrics.ExtraLabels)
-					if err := p.runMonitor(rootContext, extraLabels, &monitor, &lastTransition, p.configuration.Instance); err != nil {
+					if err := p.runMonitor(ctx, extraLabels, &monitor, &lastTransition, p.configuration.Instance); err != nil {
 						return
 					}
 				}()
@@ -462,19 +401,17 @@ func (p *app) run() error {
 	return nil
 }
 
-func main() {
-	log.Printf("starting neko %v %v %v", Version, Commit, BuildTime)
+func newApp() Application {
+	instance := application{}
 
-	app := newApp()
-	err := app.run()
-	if err != nil {
-		log.Fatalf("unable to run application: %v", err)
-	}
+	return &instance
+}
 
+func sighandler(cancel context.CancelFunc, app Application) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan)
 
-consumer:
+outer:
 	for {
 		sig := <-sigChan
 		switch sig {
@@ -484,14 +421,32 @@ consumer:
 			fallthrough
 		case syscall.SIGQUIT:
 			log.Printf("received signal: %v", sig)
-			break consumer
+			cancel()
+			break outer
 
 		case syscall.SIGHUP:
 			log.Printf("received signal: %v", sig)
-			err := app.reload()
+			err := app.Reload()
 			if err != nil {
 				log.Printf("unable to reload configuration: %v", err)
 			}
 		}
 	}
+}
+
+func main() {
+	log.Printf("starting neko %v %v %v", Version, Commit, BuildTime)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	app := newApp()
+	err := app.Run(ctx)
+	if err != nil {
+		log.Fatalf("unable to run application: %v", err)
+	}
+
+	go sighandler(cancel, app)
+	<-ctx.Done()
+
+	log.Printf("terminating")
 }

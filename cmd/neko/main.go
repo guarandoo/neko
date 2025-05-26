@@ -472,7 +472,10 @@ consumer:
 
 		case syscall.SIGHUP:
 			log.Printf("received signal: %v", sig)
-			app.reload()
+			err := app.reload()
+			if err != nil {
+				log.Printf("unable to reload configuration: %v", err)
+			}
 		}
 	}
 }

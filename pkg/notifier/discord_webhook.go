@@ -23,6 +23,8 @@ type discordWebhookReply struct {
 }
 
 func (n *discordWebhookNotifier) editMessage(messageId string, content string) (*discordWebhookReply, error) {
+	var err error
+
 	body := map[string]any{
 		"content": content,
 	}
@@ -50,7 +52,7 @@ func (n *discordWebhookNotifier) editMessage(messageId string, content string) (
 		return nil, fmt.Errorf("received non-success status code: %d", res.StatusCode)
 	}
 
-	defer res.Body.Close()
+	defer func() { err = res.Body.Close() }()
 
 	j := discordWebhookReply{}
 	err = json.NewDecoder(res.Body).Decode(&j)
@@ -58,10 +60,12 @@ func (n *discordWebhookNotifier) editMessage(messageId string, content string) (
 		return nil, fmt.Errorf("unable to parse response body: %w", err)
 	}
 
-	return &j, nil
+	return &j, err
 }
 
 func sendMessage(ctx context.Context, url string, content string) (*discordWebhookReply, error) {
+	var err error
+
 	body := map[string]any{
 		"content": content,
 	}
@@ -90,14 +94,15 @@ func sendMessage(ctx context.Context, url string, content string) (*discordWebho
 		return nil, fmt.Errorf("received non-success status code: %d", res.StatusCode)
 	}
 
-	defer res.Body.Close()
+	defer func() { err = res.Body.Close() }()
+
 	j := discordWebhookReply{}
 	err = json.NewDecoder(res.Body).Decode(&j)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse response body: %w", err)
 	}
 
-	return &j, nil
+	return &j, err
 }
 
 func (n *discordWebhookNotifier) Notify(ctx context.Context, name string, data map[string]any) error {

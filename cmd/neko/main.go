@@ -63,7 +63,7 @@ func (p *application) Reload() error {
 		shouldStart := (!oldConfig.Metrics.Enable && newConfig.Metrics.Enable) || (newConfig.Metrics.Enable && listenAddressChanged)
 		if shouldStart {
 			if err := p.metricsServer.Listen(newConfig.Metrics.ListenAddress); err != nil {
-				log.Printf("unable to shart metrics server: %v", err)
+				log.Printf("unable to start metrics server: %v", err)
 			}
 		}
 	}

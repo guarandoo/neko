@@ -10,3 +10,5 @@ values.yaml
 cmd/neko/__debug_bin*
 
 result
+
+debug*.sh

@@ -21,3 +21,5 @@ flake.lock
 cmd/neko/__debug_bin*
 
 result
+
+debug*.sh

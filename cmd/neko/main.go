@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
@@ -34,6 +32,8 @@ type app struct {
 	metricsProbeAttemptsFailed *prometheus.CounterVec
 	metricsUp                  *prometheus.GaugeVec
 	metricsScrapeDuration      *prometheus.HistogramVec
+	metricsServer              MetricsServer
+	configurationFile          string
 	configuration              *Configuration
 }
 
@@ -75,6 +75,33 @@ func (p *app) createRaft() error {
 }
 
 func (p *app) reload() error {
+	oldConfig := p.configuration
+
+	newConfig, err := loadConfiguration(p.configurationFile)
+	if err != nil {
+		return err
+	}
+
+	p.configuration = newConfig
+
+	{
+		listenAddressChanged := newConfig.Metrics.ListenAddress != oldConfig.Metrics.ListenAddress
+
+		shouldShutdown := !newConfig.Metrics.Enable || listenAddressChanged
+		if shouldShutdown {
+			if err := p.metricsServer.Close(); err != nil {
+				log.Printf("unable to shut down metrics server: %v", err)
+			}
+		}
+
+		shouldStart := (!oldConfig.Metrics.Enable && newConfig.Metrics.Enable) || (newConfig.Metrics.Enable && listenAddressChanged)
+		if shouldStart {
+			if err := p.metricsServer.Listen(newConfig.Metrics.ListenAddress); err != nil {
+				log.Printf("unable to shart metrics server: %v", err)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -226,6 +253,7 @@ func (p *app) run() error {
 			log.Printf("unable to load configuration from %v: %v", cfgPath, err)
 		} else {
 			log.Printf("successfully loaded configuration from: %v", cfgPath)
+			p.configurationFile = cfgPath
 			p.configuration = config
 			break
 		}
@@ -283,8 +311,6 @@ func (p *app) run() error {
 		p.configuration.Monitors = append(p.configuration.Monitors, c...)
 	}
 
-	var wg sync.WaitGroup
-
 	keys := lo.Keys(p.configuration.Metrics.ExtraLabels)
 	labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
 	p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -304,23 +330,13 @@ func (p *app) run() error {
 		Help: "The amount of time the probe took.",
 	}, labels)
 
+	p.metricsServer = newMetricsServer(promhttp.Handler())
 	if p.configuration.Metrics.Enable {
 		log.Print("setting up metrics")
 
-		metricsServerMux := http.NewServeMux()
-		metricsServerMux.Handle("/metrics", promhttp.Handler())
-		metricsServer := http.Server{
-			Addr:    p.configuration.Metrics.ListenAddress,
-			Handler: metricsServerMux,
+		if err := p.metricsServer.Listen(p.configuration.Metrics.ListenAddress); err != nil {
+			return fmt.Errorf("unable to start metrics server: %v", err)
 		}
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := metricsServer.ListenAndServe(); err != nil {
-				log.Fatalf("unable to start metrics server: %v", err)
-			}
-		}()
 	}
 
 	clusterConfig := p.configuration.Cluster

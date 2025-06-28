@@ -25,7 +25,7 @@
             version = "0.0.15";
             src = pkgs.lib.cleanSource self;
 
-            vendorHash = "sha256-5cUcUY8irKhtZDPaoEItHfwEBZGhRABT0EnxjkXTTlc=";
+            vendorHash = "sha256-0gWNe4XPJlQHoAO8sor2kZf5QJqNX4WAbX7pdJvtmMA=";
 
             subPackages = [ "cmd/neko" ];
           };
@@ -131,6 +131,15 @@
         packages = with pkgs; {
           inherit neko;
           default = neko;
+        };
+        devShell = pkgs.mkShell {
+          packages = with pkgs; [
+            curl
+            git
+            gopls
+            gotools
+            go_1_24
+          ];
         };
       }
     );

@@ -1,0 +1,17 @@
+[package]
+name = "neko3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.42"
+ping = "0.6.1"
+regex = "1.11.3"
+reqwest = { version = "0.12.23", features = ["blocking"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+serde_yaml = "0.9.34"
+ssh2 = "0.9.5"
+tokio = "1.47.1"
+trust-dns-resolver = "0.23.2"
+whois-rust = "1.6.0"

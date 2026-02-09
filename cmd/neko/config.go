@@ -347,6 +347,26 @@ func (t *DnsProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 
 // endregion
 
+// region sqlprobetype
+type SqlProbeTypeConfig struct {
+	ProbeTypeConfig
+	Driver string `yaml:"driver"`
+	DSN    string `yaml:"dsn"`
+	Query  string `yaml:"query"`
+}
+
+func (t *SqlProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt SqlProbeTypeConfig
+	value := rt{}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = SqlProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
 // region probe
 type ProbeConfig struct {
 	Type    string
@@ -446,6 +466,21 @@ func (t *ProbeConfig) UnmarshalYAML(n *yaml.Node) error {
 		type rt struct {
 			Timeout time.Duration      `yaml:"timeout"`
 			Config  DnsProbeTypeConfig `yaml:"config"`
+		}
+		c := rt{
+			Timeout: time.Second * 5,
+		}
+		err := n.Decode(&c)
+		if err != nil {
+			return err
+		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
+
+	case probe.SqlProbeType:
+		type rt struct {
+			Timeout time.Duration      `yaml:"timeout"`
+			Config  SqlProbeTypeConfig `yaml:"config"`
 		}
 		c := rt{
 			Timeout: time.Second * 5,

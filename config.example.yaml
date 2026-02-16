@@ -94,3 +94,14 @@ monitors:
     notifiers:
       - name: my_discord_notifier
       - name: my_smtp_notifier
+  - name: sql-monitor
+    interval: 1m
+    probe:
+      type: sql
+      config:
+        driver: mysql
+        dsn: user:pass@tcp(127.0.0.1:3306)/mydb
+        query: SELECT 1;
+    notifiers:
+      - name: my_discord_notifier
+      - name: my_smtp_notifier

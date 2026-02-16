@@ -286,6 +286,18 @@ config:
 
 #### SQL
 
+Perform a query against a `sql`-compatible SQL server.
+
+```yaml
+type: sql
+config:
+  driver: mysql
+  dsn: user:pass@tcp(127.0.0.1:3306)/mydb
+  # driver: pgx
+  # dsn: postgres://user:pass@127.0.0.1:5432/mydb
+  query: SELECT 1;
+```
+
 #### DNS
 
 Test DNS resolution capability, the probe succeeds if there is at least 1 record of the specified type returned for the target.

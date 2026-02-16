@@ -12,6 +12,7 @@ import (
 	"github.com/guarandoo/neko/pkg/core"
 
 	"github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5"
 )
 
 const SqlProbeType string = "sql"

@@ -1,9 +1,12 @@
-IMAGE ?= gitea.calliope.rip/guarandoo/neko
+NAME := neko
+IMAGE ?= docker.io/guarandoo/$(NAME)
+TAG ?= latest
 
 GO := go
 MAKE := make
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
+DOCKER := podman
 
 DOCKER_BUILD_PLATFORMS ?= linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 ifeq ($(GOOS), windows)
@@ -59,22 +62,11 @@ binary-darwin-amd64:
 
 all-binaries: binary-windows-amd64 binary-linux-386 binary-linux-amd64 binary-darwin-amd64
 
-docker-image: export DOCKER_BUILDX_ARGS := --load
 docker-image: export DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
 docker-image:
-	$(MAKE) docker-latest
-
-docker-multiarch-image:
-	$(MAKE) docker-latest
-
-publish-docker-multiarch-image: export DOCKER_BUILDX_ARGS := --push
-publish-docker-multiarch-image:
-	$(MAKE) docker-latest
-
-docker-%:
-	docker buildx build $(DOCKER_BUILDX_ARGS) \
-		-t $(IMAGE):$* \
+	@$(DOCKER) buildx build \
+		-t $(IMAGE):$(TAG) \
 		--platform $(DOCKER_BUILD_PLATFORMS) \
-		--build-arg LDFLAGS "$(LDFLAGS)" \
+		--build-arg LDFLAGS="$(LDFLAGS)" \
 		-f Dockerfile \
 		.

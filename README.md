@@ -6,23 +6,32 @@ An(other) uptime monitor.
 
 ## Table of Contents
 
-- [Installation](#installation)
-  - [Building](#building)
-  - [Binary](#binary)
-  - [Helm](#helm)
-- [Configuraton](#configuration)
-  - [Distributed Mode](#distributed-mode)
-  - [Monitors](#monitors)
-  - [Notifiers](#notifiers)
-    - [Discord Webhook](#discord-webhook)
-    - [Gotify](#gotify)
-    - [SMTP](#smtp)
-  - [Probes](#probes)
-    - [Ping](#ping)
-    - [HTTP](#http)
-    - [SSH](#ssh)
-    - [SQL](#sql)
-    - [Domain](#domain)
+- [Neko](#neko)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Building](#building)
+    - [Binary](#binary)
+    - [Helm](#helm)
+    - [NixOS](#nixos)
+  - [Configuration](#configuration)
+    - [Distributed Mode](#distributed-mode)
+    - [Monitors](#monitors)
+    - [Notifiers](#notifiers)
+      - [Discord Webhook](#discord-webhook)
+      - [Gotify](#gotify)
+      - [SMTP](#smtp)
+    - [Probes](#probes)
+      - [Ping](#ping)
+      - [HTTP](#http)
+      - [SSH](#ssh)
+      - [SQL](#sql)
+      - [DNS](#dns)
+      - [Domain](#domain)
+        - [Extras](#extras)
+      - [SMB](#smb)
+        - [Extras](#extras-1)
+  - [Metrics](#metrics)
+    - [Prometheus](#prometheus)
 
 ## Installation
 
@@ -340,6 +349,28 @@ config:
 | Key         | Value                       |
 | ----------- | --------------------------- |
 | `remaining` | Amount of time until expiry |
+
+#### SMB
+
+Test connection to an SMB server share.
+
+```yaml
+type: smb
+config:
+  host: 127.0.0.1:445
+  user: some_user
+  password: some_password
+  share: my-share
+```
+
+##### Extras
+
+| Key                | Value                      |
+| ------------------ | -------------------------- |
+| `block_size`       | Server block size          |
+| `total_blocks`     | Total amount of blocks     |
+| `free_blocks`      | Amount of free blocks      |
+| `available_blocks` | Amount of available blocks |
 
 ## Metrics
 

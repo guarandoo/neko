@@ -85,15 +85,11 @@ func (p *smbProbe) Probe(ctx context.Context, instance string, monitor string) (
 	totalBlocks := info.TotalBlockCount()
 	freeBlocks := info.FreeBlockCount()
 	availableBlocks := info.AvailableBlockCount()
-	availableBytes := availableBlocks * blockSize
-	freeBytes := freeBlocks * blockSize
 
 	test.Extras["block_size"] = blockSize
 	test.Extras["total_blocks"] = totalBlocks
 	test.Extras["free_blocks"] = freeBlocks
 	test.Extras["available_blocks"] = availableBlocks
-	test.Extras["free_bytes"] = freeBytes
-	test.Extras["available_bytes"] = availableBytes
 
 	metricsSmbBlockSize.WithLabelValues(instance, monitor, SmbProbeType, p.host, p.share).Set(float64(blockSize))
 	metricsSmbFreeBlocks.WithLabelValues(instance, monitor, SmbProbeType, p.host, p.share).Set(float64(freeBlocks))

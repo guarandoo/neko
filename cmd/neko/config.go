@@ -367,6 +367,27 @@ func (t *SqlProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 
 // endregion
 
+// region smbprobetype
+type SmbProbeTypeConfig struct {
+	ProbeTypeConfig
+	Host     string `yaml:"host"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Share    string `yaml:"share"`
+}
+
+func (t *SmbProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt SmbProbeTypeConfig
+	value := rt{}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = SmbProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
 // region probe
 type ProbeConfig struct {
 	Type    string
@@ -481,6 +502,21 @@ func (t *ProbeConfig) UnmarshalYAML(n *yaml.Node) error {
 		type rt struct {
 			Timeout time.Duration      `yaml:"timeout"`
 			Config  SqlProbeTypeConfig `yaml:"config"`
+		}
+		c := rt{
+			Timeout: time.Second * 5,
+		}
+		err := n.Decode(&c)
+		if err != nil {
+			return err
+		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
+
+	case probe.SmbProbeType:
+		type rt struct {
+			Timeout time.Duration      `yaml:"timeout"`
+			Config  SmbProbeTypeConfig `yaml:"config"`
 		}
 		c := rt{
 			Timeout: time.Second * 5,

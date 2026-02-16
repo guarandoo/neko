@@ -101,9 +101,21 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case SqlProbeTypeConfig:
 		p, err = probe.NewSqlProbe(probe.SqlProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},
-			Driver: v.Driver,
-			DSN: v.DSN,
-			Query: v.Query,
+			Driver:       v.Driver,
+			DSN:          v.DSN,
+			Query:        v.Query,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to create probe: %w", err)
+		}
+
+	case SmbProbeTypeConfig:
+		p, err = probe.NewSmbProbe(probe.SmbProbeOptions{
+			ProbeOptions: probe.ProbeOptions{},
+			Host:         v.Host,
+			User:         v.User,
+			Password:     v.Password,
+			Share:        v.Share,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

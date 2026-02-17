@@ -388,6 +388,24 @@ func (t *SmbProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 
 // endregion
 
+// region smbprobetype
+type DockerProbeTypeConfig struct {
+	ProbeTypeConfig
+	Host string `yaml:"host"`
+}
+
+func (t *DockerProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
+	type rt DockerProbeTypeConfig
+	value := rt{}
+	if err := n.Decode(&value); err != nil {
+		return err
+	}
+	*t = DockerProbeTypeConfig(value)
+	return nil
+}
+
+// endregion
+
 // region probe
 type ProbeConfig struct {
 	Type    string
@@ -517,6 +535,21 @@ func (t *ProbeConfig) UnmarshalYAML(n *yaml.Node) error {
 		type rt struct {
 			Timeout time.Duration      `yaml:"timeout"`
 			Config  SmbProbeTypeConfig `yaml:"config"`
+		}
+		c := rt{
+			Timeout: time.Second * 5,
+		}
+		err := n.Decode(&c)
+		if err != nil {
+			return err
+		}
+		t.Timeout = c.Timeout
+		t.Config = c.Config
+
+	case probe.DockerProbeType:
+		type rt struct {
+			Timeout time.Duration         `yaml:"timeout"`
+			Config  DockerProbeTypeConfig `yaml:"config"`
 		}
 		c := rt{
 			Timeout: time.Second * 5,

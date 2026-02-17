@@ -121,6 +121,15 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 			return nil, fmt.Errorf("unable to create probe: %w", err)
 		}
 
+	case DockerProbeTypeConfig:
+		p, err = probe.NewDockerProbe(probe.DockerProbeOptions{
+			ProbeOptions: probe.ProbeOptions{},
+			Host:         v.Host,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to create probe: %w", err)
+		}
+
 	default:
 		p = nil
 		err = fmt.Errorf("unknown probe type: %s", pc.Type)

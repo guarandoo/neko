@@ -89,7 +89,7 @@ func (p *dockerProbe) Probe(ctx context.Context, instance string, monitor string
 				return &core.Result{Tests: []core.Test{test}}, nil
 			}
 
-			test.Extras["nodes"] = nodes
+			extras["nodes"] = nodes
 
 			type nodeKey struct {
 				state        string
@@ -116,7 +116,7 @@ func (p *dockerProbe) Probe(ctx context.Context, instance string, monitor string
 				return &core.Result{Tests: []core.Test{test}}, nil
 			}
 
-			test.Extras["services"] = services
+			extras["services"] = services
 
 			for _, service := range services {
 				isGlobal := service.Spec.Mode.Global != nil

@@ -388,7 +388,7 @@ func (t *SmbProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 
 // endregion
 
-// region smbprobetype
+// region dockerprobetype
 type DockerProbeTypeConfig struct {
 	ProbeTypeConfig
 	Host string `yaml:"host"`

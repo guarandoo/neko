@@ -79,7 +79,7 @@ func sleep(ctx context.Context, d time.Duration) {
 }
 
 func (p *application) runMonitor(ctx context.Context, extraLabels []string, monitor *Monitor, lastTransition *time.Time, instance string) error {
-	labels := lo.Union([]string{instance, monitor.Name, monitor.Configuration.Probe.Type}, extraLabels)
+	labels := append([]string{instance, monitor.Name, monitor.Configuration.Probe.Type}, extraLabels...)
 
 	previousStatus := monitor.Status
 	var status core.Status
@@ -253,7 +253,7 @@ func (p *application) Run(ctx context.Context) error {
 	}
 
 	keys := lo.Keys(p.configuration.Metrics.ExtraLabels)
-	labels := lo.Union([]string{"instance", "monitor", "type"}, keys)
+	labels := append([]string{"instance", "monitor", "type"}, keys...)
 	p.metricsProbeAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "neko_probe_attempts_total",
 		Help: "Total number of probe attempts.",

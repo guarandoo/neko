@@ -16,7 +16,7 @@ require (
 	github.com/openrdap/rdap v0.9.1
 	github.com/prometheus-community/pro-bing v0.8.0
 	github.com/prometheus/client_golang v1.22.0
-	github.com/samber/lo v1.50.0
+	github.com/samber/lo v1.52.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gopkg.in/yaml.v3 v3.0.1

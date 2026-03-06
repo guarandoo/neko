@@ -70,3 +70,12 @@ docker-image:
 		--build-arg LDFLAGS="$(LDFLAGS)" \
 		-f Dockerfile \
 		.
+
+docker-image-ubuntu: export DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
+docker-image-ubuntu:
+	@$(DOCKER) buildx build \
+		-t $(IMAGE):$(TAG) \
+		--platform $(DOCKER_BUILD_PLATFORMS) \
+		--build-arg LDFLAGS="$(LDFLAGS)" \
+		-f Dockerfile.ubuntu \
+		.

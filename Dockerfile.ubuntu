@@ -1,0 +1,30 @@
+ARG BUILDPLATFORM
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.1-trixie AS builder
+
+ARG TARGETARCH
+RUN --mount=type=cache,id=apt-pkg-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-list-${TARGETARCH},target=/var/lib/apt/lists,sharing=locked \
+    apt update && \
+    apt install -y --no-install-recommends \
+    libcap2-bin
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN --mount=type=cache,id=go-mod,sharing=locked,target=/go/pkg/mod \
+    go mod download
+
+COPY . .
+ARG TARGETOS
+ARG LDFLAGS
+RUN --mount=type=cache,id=go-mod,sharing=locked,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
+        -ldflags "${LDFLAGS}" \
+        -o neko \
+        ./cmd/neko
+RUN setcap cap_net_raw=+ep neko
+
+FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:resolute-20260108 AS runtime
+WORKDIR /app
+
+COPY --from=builder /app/neko .
+ENTRYPOINT [ "/app/neko" ]

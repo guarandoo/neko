@@ -18,7 +18,7 @@ VERSION := $(shell git describe --tags --abbrev=0)
 COMMIT := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
-LDFLAGS := -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.BuildTime=$(BUILD_TIME)'
+LDFLAGS := -s -w -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.BuildTime=$(BUILD_TIME)'
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 

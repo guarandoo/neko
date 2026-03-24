@@ -370,10 +370,15 @@ func (t *SqlProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 // region smbprobetype
 type SmbProbeTypeConfig struct {
 	ProbeTypeConfig
-	Host     string `yaml:"host"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Share    string `yaml:"share"`
+	Host                  string `yaml:"host"`
+	Domain                string `yaml:"domain"`
+	User                  string `yaml:"user"`
+	Password              string `yaml:"password"`
+	Share                 string `yaml:"share"`
+	Workstation           string `yaml:"workstation"`
+	TargetSPN             string `yaml:"targetSPN"`
+	RequireMessageSigning bool   `yaml:"requireMessageSigning"`
+	SpecifiedDialect      uint16 `yaml:"specifiedDialect"`
 }
 
 func (t *SmbProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {

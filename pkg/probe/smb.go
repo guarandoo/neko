@@ -37,10 +37,37 @@ func initSmbProbe() {
 }
 
 type smbProbe struct {
-	host     string
-	user     string
-	password string
-	share    string
+	host                  string
+	domain                string
+	workstation           string
+	targetSPN             string
+	user                  string
+	password              string
+	share                 string
+	requireMessageSigning bool
+	specifiedDialect      uint16
+}
+
+func (p *smbProbe) dialNTLM(ctx context.Context) (*smb2.Session, error) {
+	dialer := &smb2.Dialer{
+		Initiator: &smb2.NTLMInitiator{
+			Domain:      p.domain,
+			Workstation: p.workstation,
+			TargetSPN:   p.targetSPN,
+			User:        p.user,
+			Password:    p.password,
+		},
+		Negotiator: smb2.Negotiator{
+			RequireMessageSigning: p.requireMessageSigning,
+			SpecifiedDialect:      p.specifiedDialect,
+		},
+	}
+
+	session, err := dialer.Dial(ctx, p.host)
+	if err != nil {
+		return nil, err
+	}
+	return session, nil
 }
 
 func (p *smbProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
@@ -51,14 +78,7 @@ func (p *smbProbe) Probe(ctx context.Context, instance string, monitor string) (
 		Extras: make(map[string]any),
 	}
 
-	dialer := &smb2.Dialer{
-		Initiator: &smb2.NTLMInitiator{
-			User:     p.user,
-			Password: p.password,
-		},
-	}
-
-	session, err := dialer.Dial(ctx, p.host)
+	session, err := p.dialNTLM(ctx)
 	if err != nil {
 		test.Status = core.StatusDown
 		test.Error = err
@@ -101,19 +121,29 @@ func (p *smbProbe) Probe(ctx context.Context, instance string, monitor string) (
 
 type SmbProbeOptions struct {
 	ProbeOptions
-	Host     string
-	User     string
-	Password string
-	Share    string
+	Host                  string
+	Domain                string
+	Workstation           string
+	TargetSPN             string
+	User                  string
+	Password              string
+	Share                 string
+	RequireMessageSigning bool
+	SpecifiedDialect      uint16
 }
 
 func NewSmbProbe(options SmbProbeOptions) (Probe, error) {
 	onceInitSmbProbe.Do(initSmbProbe)
 
 	return &smbProbe{
-		host:     options.Host,
-		user:     options.User,
-		password: options.Password,
-		share:    options.Share,
+		host:                  options.Host,
+		domain:                options.Domain,
+		workstation:           options.Workstation,
+		targetSPN:             options.TargetSPN,
+		user:                  options.User,
+		password:              options.Password,
+		share:                 options.Share,
+		requireMessageSigning: options.RequireMessageSigning,
+		specifiedDialect:      options.SpecifiedDialect,
 	}, nil
 }

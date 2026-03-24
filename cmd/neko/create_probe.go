@@ -111,11 +111,16 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 
 	case SmbProbeTypeConfig:
 		p, err = probe.NewSmbProbe(probe.SmbProbeOptions{
-			ProbeOptions: probe.ProbeOptions{},
-			Host:         v.Host,
-			User:         v.User,
-			Password:     v.Password,
-			Share:        v.Share,
+			ProbeOptions:          probe.ProbeOptions{},
+			Host:                  v.Host,
+			User:                  v.User,
+			Password:              v.Password,
+			Share:                 v.Share,
+			Domain:                v.Domain,
+			Workstation:           v.Workstation,
+			TargetSPN:             v.TargetSPN,
+			RequireMessageSigning: v.RequireMessageSigning,
+			SpecifiedDialect:      v.SpecifiedDialect,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.0-alpine3.23 AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.1-alpine3.23 AS builder
 
 ARG TARGETARCH
 RUN --mount=type=cache,id=apk-${TARGETARCH},sharing=locked,target=/var/cache/apk \

@@ -162,8 +162,9 @@ type ProbeTypeConfig struct {
 // region execprobetype
 type ExecProbeTypeConfig struct {
 	ProbeTypeConfig
-	Path string   `yaml:"path"`
-	Args []string `yaml:"args"`
+	Path          string   `yaml:"path"`
+	Args          []string `yaml:"args"`
+	EnableMetrics bool     `yaml:"enableMetrics"`
 }
 
 // endregion

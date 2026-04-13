@@ -14,9 +14,10 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	switch v := pc.Config.(type) {
 	case ExecProbeTypeConfig:
 		p, err = probe.NewExecProbe(probe.ExecProbeOptions{
-			ProbeOptions: probe.ProbeOptions{},
-			Name:         v.Path,
-			Args:         v.Args,
+			ProbeOptions:  probe.ProbeOptions{},
+			Name:          v.Path,
+			Args:          v.Args,
+			EnableMetrics: v.EnableMetrics,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

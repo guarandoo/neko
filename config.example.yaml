@@ -105,3 +105,18 @@ monitors:
     notifiers:
       - name: my_discord_notifier
       - name: my_smtp_notifier
+  # This monitor uses the `exec` probe type to execute a script
+  # (docs/examples/check_smbclient.sh) which runs smbclient against
+  # an SMB server, the script also writes Prometheus-compatible
+  # to stdout which can be associated as metrics to this monitor
+  - name: exec-monitor-smb-share
+    interval: 1m
+    probe:
+      type: exec
+      config:
+        path: ./docs/examples/check_smbclient.sh
+        args: ["my-username", "my-password", "127.0.0.1", "my-share"]
+        enableMetrics: false
+    notifiers:
+      - name: my_discord_notifier
+      - name: my_smtp_notifier

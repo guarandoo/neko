@@ -20,7 +20,7 @@ RUN --mount=type=cache,id=go-mod,sharing=locked,target=/go/pkg/mod \
         ./cmd/neko
 RUN setcap cap_net_raw=+ep neko
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.23.3 AS runtime
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:3.24.1 AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/neko .

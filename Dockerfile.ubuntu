@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.1-trixie AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.4-trixie AS builder
 
 ARG TARGETARCH
 RUN --mount=type=cache,id=apt-pkg-${TARGETARCH},target=/var/cache/apt,sharing=locked \

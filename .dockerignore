@@ -5,7 +5,7 @@
 chart/
 dist/
 
-Dockerfile
+Dockerfile*
 .dockerignore
 Makefile
 README.md

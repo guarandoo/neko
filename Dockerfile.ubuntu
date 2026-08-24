@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26.4-trixie AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.27.0-trixie AS builder
 
 ARG TARGETARCH
 RUN --mount=type=cache,id=apt-pkg-${TARGETARCH},target=/var/cache/apt,sharing=locked \
@@ -23,7 +23,7 @@ RUN --mount=type=cache,id=go-mod,sharing=locked,target=/go/pkg/mod \
         ./cmd/neko
 RUN setcap cap_net_raw=+ep neko
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:resolute-20260610 AS runtime
+FROM --platform=${BUILDPLATFORM:-linux/amd64} ubuntu:resolute-20260811.1 AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/neko .

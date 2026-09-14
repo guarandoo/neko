@@ -345,12 +345,15 @@ config:
 ```yaml
 type: domain
 config:
-  domain: https://example.com
+  # server: https://rdap.ca.fury.ca/
+  domains:
+    - https://example.com
+    - https://acme.org
 ```
 
-| Key      | Required | Description |
-| -------- | -------- | ----------- |
-| `domain` | Yes      |             |
+| Key       | Required | Description              |
+| --------- | -------- | ------------------------ |
+| `domains` | Yes      | List of domains to query |
 
 ##### Extras
 

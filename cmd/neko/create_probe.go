@@ -80,7 +80,8 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case DomainProbeTypeConfig:
 		p, err = probe.NewDomainProbe(probe.DomainProbeOptions{
 			ProbeOptions: probe.ProbeOptions{},
-			Domain:       v.Domain,
+			Server:       v.Server,
+			Domains:      v.Domains,
 			Threshold:    v.Threshold,
 		})
 		if err != nil {

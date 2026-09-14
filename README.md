@@ -346,14 +346,17 @@ config:
 type: domain
 config:
   # server: https://rdap.ca.fury.ca/
+  # expiryThreshold: 90d
   domains:
     - https://example.com
     - https://acme.org
 ```
 
-| Key       | Required | Description              |
-| --------- | -------- | ------------------------ |
-| `domains` | Yes      | List of domains to query |
+| Key               | Required | Description                                                                  |
+| ----------------- | -------- | ---------------------------------------------------------------------------- |
+| `server`          | No       | RDAP server to use                                                           |
+| `expiryThreshold` | No       | The time remaining before domain expiry at which a domain is considered down |
+| `domains`         | Yes      | List of domains to query                                                     |
 
 ##### Extras
 

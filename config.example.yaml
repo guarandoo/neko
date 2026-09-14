@@ -80,7 +80,11 @@ monitors:
     probe:
       type: domain
       config:
-        domain: https://example.com
+        # server: https://rdap.ca.fury.ca/
+        # expiryThreshold: 90d
+        domains:
+          - https://example.com
+          - https://acme.org
     notifiers:
       - name: my_discord_notifier
       - name: my_smtp_notifier

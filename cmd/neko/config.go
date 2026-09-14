@@ -306,15 +306,15 @@ func (t *SshProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 // region domainprobetype
 type DomainProbeTypeConfig struct {
 	ProbeTypeConfig
-	Server    string        `yaml:"server"`
-	Domains   []string      `yaml:"domains"`
-	Threshold time.Duration `yaml:"threshold"`
+	Server          string        `yaml:"server"`
+	Domains         []string      `yaml:"domains"`
+	ExpiryThreshold time.Duration `yaml:"expiryThreshold"`
 }
 
 func (t *DomainProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 	type rt DomainProbeTypeConfig
 	value := rt{
-		Threshold: 0,
+		ExpiryThreshold: 0,
 	}
 	if err := n.Decode(&value); err != nil {
 		return err

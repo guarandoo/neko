@@ -29,10 +29,10 @@ func initDomainProbe() {
 }
 
 type domainProbe struct {
-	server    *url.URL
-	domains   []string
-	client    *rdap.Client
-	threshold time.Duration
+	server          *url.URL
+	domains         []string
+	client          *rdap.Client
+	expiryThreshold time.Duration
 }
 
 func (p *domainProbe) Probe(ctx context.Context, instance string, monitor string) (*core.Result, error) {
@@ -78,20 +78,18 @@ func (p *domainProbe) Probe(ctx context.Context, instance string, monitor string
 		}
 
 		expiration, err := time.Parse(time.RFC3339, info.Events[index].Date)
-		if err != nil {
-			return nil, err
-		}
+		if err == nil {
+			remaining := time.Since(expiration).Abs()
+			test.Extras["remaining"] = remaining
 
-		remaining := time.Since(expiration).Abs()
-		test.Extras["remaining"] = remaining
+			metricsDomainRemainingHours.WithLabelValues(instance, monitor, DomainProbeType, domain).Set(remaining.Hours())
 
-		metricsDomainRemainingHours.WithLabelValues(instance, monitor, DomainProbeType, domain).Set(remaining.Hours())
-
-		if remaining < p.threshold {
-			test.Status = core.StatusDown
-			test.Error = fmt.Errorf("domain expiration %s is below threshold %s", remaining, p.threshold)
-			tests = append(tests, test)
-			continue
+			if remaining < p.expiryThreshold {
+				test.Status = core.StatusDown
+				test.Error = fmt.Errorf("domain expiration %s is below threshold %s", remaining, p.expiryThreshold)
+				tests = append(tests, test)
+				continue
+			}
 		}
 
 		tests = append(tests, test)
@@ -102,9 +100,9 @@ func (p *domainProbe) Probe(ctx context.Context, instance string, monitor string
 
 type DomainProbeOptions struct {
 	ProbeOptions
-	Server    string
-	Domains   []string
-	Threshold time.Duration
+	Server          string
+	Domains         []string
+	ExpiryThreshold time.Duration
 }
 
 func NewDomainProbe(options DomainProbeOptions) (Probe, error) {
@@ -122,10 +120,10 @@ func NewDomainProbe(options DomainProbeOptions) (Probe, error) {
 
 	client := &rdap.Client{}
 	instance := domainProbe{
-		server:    server,
-		domains:   options.Domains,
-		client:    client,
-		threshold: options.Threshold,
+		server:          server,
+		domains:         options.Domains,
+		client:          client,
+		expiryThreshold: options.ExpiryThreshold,
 	}
 	return &instance, nil
 }

@@ -79,10 +79,10 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 
 	case DomainProbeTypeConfig:
 		p, err = probe.NewDomainProbe(probe.DomainProbeOptions{
-			ProbeOptions: probe.ProbeOptions{},
-			Server:       v.Server,
-			Domains:      v.Domains,
-			Threshold:    v.Threshold,
+			ProbeOptions:    probe.ProbeOptions{},
+			Server:          v.Server,
+			Domains:         v.Domains,
+			ExpiryThreshold: v.ExpiryThreshold,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to create probe: %w", err)

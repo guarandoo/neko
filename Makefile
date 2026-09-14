@@ -6,7 +6,7 @@ GO := go
 MAKE := make
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
-DOCKER := podman
+DOCKER := $(shell command -v podman >/dev/null 2>&1 && echo podman || echo docker)
 
 DOCKER_BUILD_PLATFORMS ?= linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 ifeq ($(GOOS), windows)

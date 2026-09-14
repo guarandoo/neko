@@ -1,7 +1,5 @@
 # Neko
 
-![Release status badege](https://git.calliope.rip/guarandoo/neko/actions/workflows/release.yaml/badge.svg)
-
 An(other) uptime monitor.
 
 ## Table of Contents
@@ -93,7 +91,7 @@ This repository provides a Nix flake which can be used with a NixOS system:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/unstable";
     # ...
-    neko.url = "git+https://git.calliope.rip/guarandoo/neko"; # add flake as input
+    neko.url = "git+https://github.com/guarandoo/neko"; # add flake as input
   };
   outputs = {
     nixpkgs,

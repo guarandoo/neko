@@ -11,6 +11,7 @@ An(other) uptime monitor.
   - [Installation](#installation)
     - [Building](#building)
     - [Binary](#binary)
+    - [Docker](#docker)
     - [Helm](#helm)
     - [NixOS](#nixos)
   - [Configuration](#configuration)
@@ -64,6 +65,15 @@ make docker-multiarch-image
 ### Binary
 
 Grab prebuilt binaries from [Releases](/guarandoo/neko/releases)
+
+### Docker
+
+Images are published to [Docker Hub](https://hub.docker.com/r/guarandoo/neko).
+
+There are two variants:
+
+* `x.y.z` - the default tag, uses Alpine as the base runtime image
+* `x.y.z-ubuntu` - uses Ubuntu as the runtime base image
 
 ### Helm
 

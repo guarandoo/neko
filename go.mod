@@ -1,6 +1,6 @@
 module github.com/guarandoo/neko
 
-go 1.26.4
+go 1.27.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2

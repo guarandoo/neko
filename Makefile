@@ -15,7 +15,7 @@ endif
 BIN_NAME := neko$(BIN_SUFFIX)
 
 VERSION := $(shell git describe --tags --abbrev=0)
-COMMIT := $(shell git rev-parse --short HEAD)
+COMMIT := $(shell git describe --always --dirty --exclude='*')
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 LDFLAGS := -s -w -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.BuildTime=$(BUILD_TIME)'

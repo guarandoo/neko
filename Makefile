@@ -22,6 +22,9 @@ LDFLAGS := -s -w -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'mai
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
+DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
+DOCKER_VARIANT :=
+
 .PHONY: default
 default: binary
 
@@ -62,20 +65,26 @@ binary-darwin-amd64:
 
 all-binaries: binary-windows-amd64 binary-linux-386 binary-linux-amd64 binary-darwin-amd64
 
-docker-image: export DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
+docker-image: 
 docker-image:
-	@$(DOCKER) buildx build \
+	$(DOCKER) buildx build \
 		-t $(IMAGE):$(TAG) \
 		--platform $(DOCKER_BUILD_PLATFORMS) \
 		--build-arg LDFLAGS="$(LDFLAGS)" \
-		-f Dockerfile \
+		-f Dockerfile$(if $(strip $(DOCKER_VARIANT)),\.,)$(DOCKER_VARIANT) \
 		.
 
-docker-image-ubuntu: export DOCKER_BUILD_PLATFORMS := $(GOOS)/$(GOARCH)
-docker-image-ubuntu:
-	@$(DOCKER) buildx build \
-		-t $(IMAGE):$(TAG) \
-		--platform $(DOCKER_BUILD_PLATFORMS) \
-		--build-arg LDFLAGS="$(LDFLAGS)" \
-		-f Dockerfile.ubuntu \
-		.
+tag-docker-image:
+tag-docker-image:
+	@if ! git diff-index --quiet HEAD --; then \
+		echo 'Working tree is dirty'; \
+		exit 1; \
+	fi; \
+	if ! git describe --tags --exact-match HEAD > /dev/null 2>&1; then \
+		echo 'HEAD does not match a tag'; \
+		exit 1; \
+	fi; \
+	version="$(VERSION)"; \
+	tag="$${version#v}$(if $(strip $(DOCKER_VARIANT)),-,)$(DOCKER_VARIANT)"; \
+	$(DOCKER) tag $(IMAGE):latest $(IMAGE):$$tag; \
+	echo $(IMAGE):$$tag

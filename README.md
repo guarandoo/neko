@@ -269,6 +269,11 @@ type: http
 config:
   address: https://example.com/livez
   maxRedirects: 1
+  # resolve:
+  #   overrides:
+  #     example.com:
+  #       - 192.168.20.4
+  #       - 10.190.0.7  
 ```
 
 or if the application uses HTTP over Unix sockets
@@ -276,7 +281,6 @@ or if the application uses HTTP over Unix sockets
 ```yaml
 type: http
 config:
-  socketPath: /run/myapp/myapp.sock
   address: http://unix/livez
   maxRedirects: 1
 ```
@@ -284,10 +288,10 @@ config:
 | Key                  | Required | Description                                      |
 | -------------------- | -------- | ------------------------------------------------ |
 | `address`            | Yes      | The target URL to make requests against          |
-| `socketPath`         | No       | Path to UNIX socket                              |
 | `maxRedirects`       | No       | Maximum number of allowed redirects              |
 | `successStatusCodes` | No       | List of HTTP status codes to consider as success |
 | `headers`            | No       | A set of key-value pairs to send as HTTP headers |
+| `resolve`            | No       | Name resolution options                          |
 
 #### SSH
 

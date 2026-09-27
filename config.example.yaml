@@ -72,6 +72,11 @@ monitors:
       config:
         address: https://example.com
         maxRedirects: 1
+        # resolve:
+        #   overrides:
+        #     example.com:
+        #       - 192.168.20.4
+        #       - 10.190.0.7
     notifiers:
       - name: my_discord_notifier
       - name: my_smtp_notifier

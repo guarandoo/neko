@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/guarandoo/neko/pkg/core"
+	"github.com/guarandoo/neko/pkg/util"
 )
 
 const HttpProbeType string = "http"
@@ -28,6 +29,7 @@ var (
 )
 
 type httpProbe struct {
+	resolver           util.Resolver
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -85,9 +87,8 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 			return transport
 		}
 
-		r := net.Resolver{}
 		host := p.url.Hostname()
-		ips, err := r.LookupIP(ctx, "ip", host)
+		ips, err := p.resolver.LookupIP(ctx, "ip", host)
 		if err != nil {
 			tests = append(tests, core.Test{
 				Target: host,
@@ -145,6 +146,7 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 type HttpProbeOptions struct {
 	ProbeOptions
+	Overrides          map[string][]net.IP
 	Timeout            time.Duration
 	Url                string
 	Method             string
@@ -156,12 +158,19 @@ type HttpProbeOptions struct {
 func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	onceInitHttpProbe.Do(initHttpProbe)
 
+	overrides := map[string][]net.IP{}
+	if options.Overrides != nil {
+		overrides = options.Overrides
+	}
+	resolver := util.NewDefaultResolver(overrides)
+
 	u, err := url.ParseRequestURI(options.Url)
 	if err != nil {
 		return nil, err
 	}
 
 	instance := httpProbe{
+		resolver:           resolver,
 		timeout:            options.Timeout,
 		url:                *u,
 		method:             options.Method,

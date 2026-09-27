@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -156,6 +157,10 @@ func (f *NotifierConfig) UnmarshalYAML(unmarshal func(any) error) error {
 // endregion
 
 // region probes
+type ResolveConfig struct {
+	Overrides map[string][]net.IP `yaml:"overrides"`
+}
+
 type ProbeTypeConfig struct {
 }
 
@@ -172,6 +177,7 @@ type ExecProbeTypeConfig struct {
 // region pingprobetype
 type PingProbeTypeConfig struct {
 	ProbeTypeConfig
+	Resolve             ResolveConfig `yaml:"resolve"`
 	Address             string        `yaml:"address"`
 	Count               int           `yaml:"count"`
 	PacketLossThreshold float64       `yaml:"packetLossThreshold"`
@@ -199,6 +205,7 @@ func (t *PingProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 // region httpprobetype
 type HttpProbeTypeConfig struct {
 	ProbeTypeConfig
+	Resolve            ResolveConfig     `yaml:"resolve"`
 	Address            string            `yaml:"address"`
 	MaxRedirects       int               `yaml:"maxRedirects"`
 	SuccessStatusCodes []int             `yaml:"successStatusCodes"`

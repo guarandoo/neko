@@ -40,6 +40,7 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
 			Overrides:          v.Resolve.Overrides,
 			ServerName:         v.ServerName,
+			InsecureSkipVerify: v.InsecureSkipVerify,
 			ProbeOptions:       probe.ProbeOptions{},
 			Url:                v.Address,
 			MaxRedirects:       v.MaxRedirects,

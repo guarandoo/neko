@@ -293,6 +293,7 @@ config:
 | `headers`            | No       | A set of key-value pairs to send as HTTP headers |
 | `resolve`            | No       | Name resolution options                          |
 | `serverName`         | No       | Name to use for Server Name Indication           |
+| `insecureSkipVerify` | No       | Skip TLS certificate validation                  |
 
 #### SSH
 

@@ -207,6 +207,7 @@ type HttpProbeTypeConfig struct {
 	ProbeTypeConfig
 	Resolve            ResolveConfig     `yaml:"resolve"`
 	ServerName         string            `yaml:"serverName"`
+	InsecureSkipVerify bool              `yaml:"insecureSkipVerify"`
 	Address            string            `yaml:"address"`
 	MaxRedirects       int               `yaml:"maxRedirects"`
 	SuccessStatusCodes []int             `yaml:"successStatusCodes"`

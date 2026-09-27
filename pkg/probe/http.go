@@ -32,6 +32,7 @@ var (
 type httpProbe struct {
 	resolver           util.Resolver
 	serverName         string
+	insecureSkipVerify bool
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -71,14 +72,25 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 			transport: transport,
 		})
 	default:
+		hostname := p.url.Hostname()
+		serverName := p.url.Hostname()
+		if host, _, err := net.SplitHostPort(serverName); err == nil {
+			serverName = host
+		}
+
 		getTransportIp := func(ip net.IP) *http.Transport {
 			dialer := &net.Dialer{}
 			transport := http.DefaultTransport.(*http.Transport).Clone()
-			if len(p.serverName) != 0 {
-				transport.TLSClientConfig = &tls.Config{
-					ServerName: p.serverName,
-				}
+
+			tlsCfg := tls.Config{
+				ServerName:         serverName,
+				InsecureSkipVerify: p.insecureSkipVerify,
 			}
+			if len(p.serverName) != 0 {
+				tlsCfg.ServerName = p.serverName
+			}
+			tlsCfg.InsecureSkipVerify = p.insecureSkipVerify
+
 			transport.DialContext = func(ctx context.Context, network string, addr string) (net.Conn, error) {
 				parts := strings.Split(addr, ":")
 				if parts[0] == p.url.Host {
@@ -94,11 +106,10 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 			return transport
 		}
 
-		host := p.url.Hostname()
-		ips, err := p.resolver.LookupIP(ctx, "ip", host)
+		ips, err := p.resolver.LookupIP(ctx, "ip", hostname)
 		if err != nil {
 			tests = append(tests, core.Test{
-				Target: host,
+				Target: hostname,
 				Status: core.StatusDown,
 				Error:  fmt.Errorf("unable to lookup domain: %w", err),
 			})
@@ -155,6 +166,7 @@ type HttpProbeOptions struct {
 	ProbeOptions
 	Overrides          map[string][]net.IP
 	ServerName         string
+	InsecureSkipVerify bool
 	Timeout            time.Duration
 	Url                string
 	Method             string
@@ -180,6 +192,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	instance := httpProbe{
 		resolver:           resolver,
 		serverName:         options.ServerName,
+		insecureSkipVerify: options.InsecureSkipVerify,
 		timeout:            options.Timeout,
 		url:                *u,
 		method:             options.Method,

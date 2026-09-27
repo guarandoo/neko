@@ -28,7 +28,6 @@ var (
 )
 
 type httpProbe struct {
-	socketPath         string
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -56,17 +55,18 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 	targets := []Target{}
 
-	if len(p.socketPath) > 0 {
+	switch p.url.Scheme {
+	case "unix":
 		transport := &http.Transport{
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return net.Dial("unix", p.socketPath)
+				return net.Dial("unix", p.url.Path)
 			},
 		}
 		targets = append(targets, Target{
-			target:    p.socketPath,
+			target:    p.url.Path,
 			transport: transport,
 		})
-	} else {
+	default:
 		getTransportIp := func(ip net.IP) *http.Transport {
 			dialer := &net.Dialer{}
 			transport := http.DefaultTransport.(*http.Transport).Clone()
@@ -86,10 +86,17 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 		}
 
 		r := net.Resolver{}
-		ips, err := r.LookupIP(ctx, "ip", p.url.Hostname())
+		host := p.url.Hostname()
+		ips, err := r.LookupIP(ctx, "ip", host)
 		if err != nil {
-			return nil, fmt.Errorf("unable to lookup domain: %w", err)
+			tests = append(tests, core.Test{
+				Target: host,
+				Status: core.StatusDown,
+				Error:  fmt.Errorf("unable to lookup domain: %w", err),
+			})
+			return &core.Result{Tests: tests}, nil
 		}
+
 		for _, ip := range ips {
 			targets = append(targets, Target{
 				target:    ip.String(),
@@ -118,7 +125,7 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 		res, err := client.Do(req)
 		if err != nil {
 			test.Status = core.StatusDown
-			test.Error = err
+			test.Error = fmt.Errorf("request failed: %w", err)
 			tests = append(tests, test)
 			continue
 		}
@@ -138,7 +145,6 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 
 type HttpProbeOptions struct {
 	ProbeOptions
-	SocketPath         string
 	Timeout            time.Duration
 	Url                string
 	Method             string
@@ -154,12 +160,8 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 	if err != nil {
 		return nil, err
 	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return nil, ErrInvalidUrlScheme
-	}
 
 	instance := httpProbe{
-		socketPath:         options.SocketPath,
 		timeout:            options.Timeout,
 		url:                *u,
 		method:             options.Method,

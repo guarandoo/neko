@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -70,8 +71,7 @@ func TestHttpProbeUnixSocket(t *testing.T) {
 	go func() { _ = server.Serve(listener) }()
 
 	probe, err := NewHttpProbe(HttpProbeOptions{
-		SocketPath:         socketPath,
-		Url:                "http://unix/live",
+		Url:                fmt.Sprintf("unix://%s", socketPath),
 		Method:             "GET",
 		MaxRedirects:       0,
 		SuccessStatusCodes: []int{200},

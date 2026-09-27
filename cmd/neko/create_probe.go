@@ -39,7 +39,6 @@ func createProbe(pc *ProbeConfig) (probe.Probe, error) {
 	case HttpProbeTypeConfig:
 		p, err = probe.NewHttpProbe(probe.HttpProbeOptions{
 			ProbeOptions:       probe.ProbeOptions{},
-			SocketPath:         v.SocketPath,
 			Url:                v.Address,
 			MaxRedirects:       v.MaxRedirects,
 			SuccessStatusCodes: v.SuccessStatusCodes,

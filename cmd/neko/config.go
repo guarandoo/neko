@@ -206,6 +206,7 @@ func (t *PingProbeTypeConfig) UnmarshalYAML(n *yaml.Node) error {
 type HttpProbeTypeConfig struct {
 	ProbeTypeConfig
 	Resolve            ResolveConfig     `yaml:"resolve"`
+	ServerName         string            `yaml:"serverName"`
 	Address            string            `yaml:"address"`
 	MaxRedirects       int               `yaml:"maxRedirects"`
 	SuccessStatusCodes []int             `yaml:"successStatusCodes"`

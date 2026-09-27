@@ -292,6 +292,7 @@ config:
 | `successStatusCodes` | No       | List of HTTP status codes to consider as success |
 | `headers`            | No       | A set of key-value pairs to send as HTTP headers |
 | `resolve`            | No       | Name resolution options                          |
+| `serverName`         | No       | Name to use for Server Name Indication           |
 
 #### SSH
 

@@ -2,6 +2,7 @@ package probe
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -30,6 +31,7 @@ var (
 
 type httpProbe struct {
 	resolver           util.Resolver
+	serverName         string
 	timeout            time.Duration
 	url                url.URL
 	method             string
@@ -72,6 +74,11 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 		getTransportIp := func(ip net.IP) *http.Transport {
 			dialer := &net.Dialer{}
 			transport := http.DefaultTransport.(*http.Transport).Clone()
+			if len(p.serverName) != 0 {
+				transport.TLSClientConfig = &tls.Config{
+					ServerName: p.serverName,
+				}
+			}
 			transport.DialContext = func(ctx context.Context, network string, addr string) (net.Conn, error) {
 				parts := strings.Split(addr, ":")
 				if parts[0] == p.url.Host {
@@ -147,6 +154,7 @@ func (p *httpProbe) Probe(ctx context.Context, instance string, monitor string) 
 type HttpProbeOptions struct {
 	ProbeOptions
 	Overrides          map[string][]net.IP
+	ServerName         string
 	Timeout            time.Duration
 	Url                string
 	Method             string
@@ -171,6 +179,7 @@ func NewHttpProbe(options HttpProbeOptions) (Probe, error) {
 
 	instance := httpProbe{
 		resolver:           resolver,
+		serverName:         options.ServerName,
 		timeout:            options.Timeout,
 		url:                *u,
 		method:             options.Method,
